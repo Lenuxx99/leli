@@ -1,0 +1,137 @@
+.response-list {
+  overflow-y: auto;
+  scrollbar-width: thin; /* Dünner Scrollbalken (nur für Firefox) */
+  scrollbar-color: #ccc #f9f9f9; /* Farbe Scrollbalken / Hintergrund */
+}
+
+/* Für WebKit-Browser (Chrome, Edge, Safari) */
+.response-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.response-list::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 4px;
+}
+
+.response-list::-webkit-scrollbar-track {
+  background: #f9f9f9;
+}
+body, html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Kein Scrollen auf der Seite */
+  height: 100%; /* Fülle den gesamten Viewport aus */
+}
+
+.App {
+  display: flex;
+  height: 100vh; 
+  width: 100vw; 
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  width: 100vw; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+
+.formular {
+  display: flex; /* Stellt sicher, dass Eingabe und Button nebeneinander angezeigt werden */
+  align-items: center; /* Zentriert Eingabe und Button vertikal */
+  gap: 10px; /* Abstand zwischen Eingabefeld und Button */
+  margin-top: 20px; /* Abstand nach oben */
+  width: 50%;
+}
+
+.formular input {
+  flex: 1; /* Lässt das Eingabefeld den verfügbaren Platz ausfüllen */
+  padding: 10px; /* Innenabstand für bessere Nutzbarkeit */
+  border: 1px solid #ccc; /* Rahmen um das Eingabefeld */
+  border-radius: 5px; /* Abgerundete Ecken */
+  font-size: 13px; /* Gut lesbare Schriftgröße */
+}
+
+.formular input:focus {
+  outline: none; /* Entfernt den Standard-Fokus-Rahmen */
+  border-color: #0b1c2e; /* Ändert die Rahmenfarbe bei Fokus */
+}
+
+.formular button {
+  padding: 10px 20px; /* Innenabstand für den Button */
+  background-color: green; /* Hintergrundfarbe */
+  color: white; /* Textfarbe */
+  border: none; /* Entfernt Standard-Rahmen */
+  border-radius: 5px; /* Abgerundete Ecken */
+  cursor: pointer; /* Zeigt den Cursor als Hand beim Hover an */
+  font-size: 13px; /* Gut lesbare Schriftgröße */
+}
+
+.formular button:hover {
+  background-color: #092036; /* Dunklere Hintergrundfarbe bei Hover */
+}
+
+.formular button:active {
+  background-color: #061529; /* Noch dunkler bei Klick */
+  transform: scale(0.98); /* Leichter "Klick"-Effekt */
+}
+
+.response-list {
+  padding: 0 5px;
+  width: 50%;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 70%;
+  overflow-y: auto;
+}
+
+.response-container {
+  display: flex; /* Setzt das Flexbox-Layout */
+  flex-direction: row; /* Richtet Kinder (Wörter) horizontal aus */
+  flex-wrap: wrap; /* Erlaubt Umbrüche, falls die Nachricht zu lang ist */
+  align-items: center; /* Zentriert die Wörter vertikal */
+  justify-content: flex-start; /* Startet die Anordnung der Wörter am Anfang des Containers */
+  margin-bottom: 10px; /* Gibt etwas Abstand zwischen den Nachrichten */
+}
+
+.bot-message {
+  background-color: #f0f0f0;
+  color: #333;
+  padding: 0 2px;
+  border-radius: 5px;
+  border: 1px solid #0b1c2e;
+  width: fit-content; /* Passt die Breite an den Inhalt an */
+  max-width: 60%; /* Maximale Breite */
+  margin: 5px 0; /* Abstand zwischen Nachrichten */
+  align-self: flex-start; /* Links ausrichten */
+}
+
+.user-message {
+  /* background-color: #0b1c2e; */
+  background-color: #f0f0f0;
+  color: #333;
+  /* color: white; */
+  padding: 0 2px;
+  border-radius: 5px;
+  width: fit-content; /* Passt die Breite an den Inhalt an */
+  max-width: 60%; /* Maximale Breite */
+  margin: 5px 0; /* Abstand zwischen Nachrichten */
+  align-self: flex-end; /* Rechts ausrichten */
+}
+
+.response {
+  margin: 0;
+  word-wrap: break-word; /* Stellt sicher, dass lange Worte nicht überlaufen */
+  padding: 10px;
+  font-size: 12px;
+  text-align: start;
+}
