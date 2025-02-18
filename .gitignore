@@ -3,3 +3,6 @@ __pycache__/
 *.py[cod]
 *.log
 chatbot-frontend/node_modules/
+/chatbot-frontend/build/
+/chroma_db
+/pdf_files
