@@ -111,9 +111,13 @@ Stelle sicher, dass llama3.1:8b oder deepseek-r1:14b in Ollama verfügbar sind
 Nach dem Build kannst du die Anwendung einfach mit python server.py starten, und dein Chatbot läuft im Produktionsmodus! Zusätzlich kannst du PDFs analysieren und extrahierte Daten in JSON speichern. 🚀
 
 
+<<<<<<< HEAD
+=======
+aamel folder jdid esmou pdf_files und hot fih lpdf
+>>>>>>> 20ce5f66d36616108500fa3409da763f96aac857
 
 
-5adem e server w jawek bhy ye zzzzz
+runi e server w jawek bhy ye zzzzz
 
 
 

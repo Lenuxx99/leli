@@ -12,6 +12,10 @@ vectorstore = Chroma(persist_directory=chroma, embedding_function=embedding)
 
 already_processed = set()
 
+if not os.path.exists(path):
+    os.makedirs(path)
+    print(f"Ordner /'{path}' wurde erstellt.")
+
 documents = []
 try:
     while True:
@@ -74,7 +78,7 @@ try:
             print(vectorstore.get())
         else:
             print("Keine gelöschten PDF-Dateien gefunden.")
-        print("Keine neuen PDFs gefunden. Warte 60 Sekunden...")
-        time.sleep(60) 
+        print("Keine neuen PDFs gefunden. Warte 10 Sekunden...")
+        time.sleep(10) 
 except KeyboardInterrupt:
     print("Skript wird beendet...")

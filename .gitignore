@@ -6,3 +6,5 @@ chatbot-frontend/node_modules/
 /chatbot-frontend/build/
 /chroma_db
 /pdf_files
+/output_json
+/nani.py
