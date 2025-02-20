@@ -24,9 +24,10 @@ Node.js & npm (für das React-Frontend)
 
 1️⃣ Python-Umgebung einrichten
 
-Erstelle eine virtuelle Umgebung (optional, aber empfohlen):
+Erstelle eine virtuelle Umgebung (optional):
 
 python -m venv venv
+
 venv\Scripts\activate  # Für Windows
 
 2️⃣ Erforderliche Abhängigkeiten installieren
@@ -66,7 +67,9 @@ Die extrahierten Daten werden als JSON-Dateien im output_json/ Ordner gespeicher
 Navigiere in den react-Ordner und führe den folgenden Befehl aus, um ein Produktions-Build zu erstellen:
 
 cd chatbot-frontend
+
 npm install
+
 npm run build
 
 Dadurch wird ein build/-Ordner erstellt, der vom Server verwendet wird. Zudem ist React als Proxy in der package.json-Datei definiert, sodass API-Anfragen während der Entwicklung direkt an den Flask-Server weitergeleitet werden (nur lokal). Das Routing übernimmt React vollständig, während die Flask-App immer nur die index.html-Seite zurückgibt(SPA).
@@ -76,6 +79,7 @@ Dadurch wird ein build/-Ordner erstellt, der vom Server verwendet wird. Zudem is
 Wechsle zurück zum Hauptverzeichnis und starte den Server mit:
 
 cd ..
+
 python server.py
 
 Dadurch wird der Server gestartet und das Frontend aus dem build/-Ordner unter dem Port 5000 ausgeliefert.
