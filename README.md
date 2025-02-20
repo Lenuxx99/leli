@@ -36,7 +36,15 @@ pip install -r requirements.txt
 
 3️⃣ Ollama installieren und starten
 
-Lade Ollama herunter und installiere es. Starte anschließend den Server:
+Lade Ollama herunter und installiere es.
+
+Installiere die beiden Modelle:
+
+ollama run deepseek-r1:14b
+
+ollama run llama3.1:8b
+
+Starte anschließend den Server, falls er noch nicht gestartet ist:
 
 ollama serve
 
