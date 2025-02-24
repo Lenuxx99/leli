@@ -10,7 +10,7 @@ import time
 # Flask-App erstellen
 app = Flask(__name__, static_folder='./chatbot-frontend/build', static_url_path=None)
 build_folder = os.path.abspath('./chatbot-frontend/build')
-socketio = SocketIO(app, cors_allowed_origins="*")  # In der Entwicklungsumgebung (wenn React auf Port 3000 und Flask auf Port 5000 läuft), handelt es sich um Cross-Origin-Anfragen. Deshalb muss das Flask-Backend CORS erlauben
+socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5000", "http://127.0.0.1:5000"], engineio_logger=True)  # In der Entwicklungsumgebung (wenn React auf Port 3000 und Flask auf Port 5000 läuft), handelt es sich um Cross-Origin-Anfragen. Deshalb muss das Flask-Backend CORS erlauben (unsicher)
 
 persist_directory = "chroma_db"
 
@@ -19,13 +19,6 @@ embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 # Chroma-Datenbank laden
 vectorstore = Chroma(persist_directory=persist_directory, embedding_function=embedding_model)
-
-def is_question_relevant(question, context):
-    # Beispiel einer einfachen Überprüfung: Suche nach gemeinsamen Wörtern
-    question_words = set(question.lower().split())
-    context_words = set(context.lower().split())
-    common_words = question_words.intersection(context_words)
-    return len(common_words) > 0
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -73,9 +66,7 @@ def handle_message(data):
         # Kontext aus den Dokumenten extrahieren
         context = "\n".join([doc.page_content for doc in similar_docs])
 
-
-        if is_question_relevant(user_input, context):
-            full_prompt = f"""
+        full_prompt = f"""
             Bitte beantworte die folgende Frage präzise und detailliert, basierend auf den bereitgestellten Informationen.
             Verwende die folgenden Hintergrundinformationen und beziehe dich direkt auf diese, ohne zu erwähnen, dass die Information extern stammt.
             Die bereitgestellten Informationen dienen als Grundlage für deine Antwort.
@@ -87,8 +78,6 @@ def handle_message(data):
             Falls die Frage zu allgemein ist oder keine echte Frage gestellt wurde, antworte allgemein und vermeide es, detaillierte Informationen zu liefern.
             Die Antwort sollte klar strukturiert, ausführlich und direkt auf die gestellte Frage bezogen sein.
             """
-        else:
-            full_prompt = user_input
 
         model_config = {
             "Lama3.1": {
