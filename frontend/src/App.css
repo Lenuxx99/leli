@@ -1,0 +1,36 @@
+.top-nav {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 2rem;
+}
+
+.top-nav a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+/* Beispiel-Hover-Effekt */
+.top-nav a:hover {
+  text-decoration: underline;
+}
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  /* Kein Scrollen auf der Seite */
+  height: 100%;
+  /* Fülle den gesamten Viewport aus */
+}
+
+.App {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+

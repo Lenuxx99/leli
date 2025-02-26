@@ -8,9 +8,9 @@ import os
 import time
 
 # Flask-App erstellen
-app = Flask(__name__, static_folder='./chatbot-frontend/build', static_url_path=None)
-build_folder = os.path.abspath('./chatbot-frontend/build')
-socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5000", "http://127.0.0.1:5000"], engineio_logger=True)  # In der Entwicklungsumgebung (wenn React auf Port 3000 und Flask auf Port 5000 läuft), handelt es sich um Cross-Origin-Anfragen. Deshalb muss das Flask-Backend CORS erlauben (unsicher)
+app = Flask(__name__, static_folder='./frontend/dist', static_url_path=None)
+
+socketio = SocketIO(app, engineio_logger=True)  # In der Entwicklungsumgebung (React auf Port 5173), handelt es sich um Cross-Origin-Anfragen. Deshalb muss das Flask-Backend CORS erlauben
 
 persist_directory = "chroma_db"
 

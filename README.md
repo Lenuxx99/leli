@@ -30,9 +30,12 @@ $ venv\Scripts\activate  # Für Windows
 $ pip install -r requirements.txt
 ```
 Haupt-Pakete:
-**Flask-SocketIO==5.5.1**
-**langchain-community==0.3.18**
-**pipdeptree**
+
+* Flask-SocketIO==5.5.1
+* langchain-community==0.3.18
+* pipdeptree
+* chromadb==0.6.3
+* sentence-transformers==3.4.1
 
 ### 3️⃣ Ollama installieren und starten
 Lade Ollama herunter und installiere es.
@@ -76,12 +79,12 @@ Die extrahierten Daten werden als JSON-Dateien im `output_json/` Ordner gespeich
 ### 1️⃣ React-Frontend für Produktion bauen
 
 ```
-$ cd chatbot-frontend
+$ cd frontend
 $ npm install
 $ npm run build
 ```
 
-Dadurch wird ein `build/`-Ordner erstellt, der vom Server verwendet wird. Zudem ist React als Proxy in der package.json-Datei definiert, sodass API-Anfragen während der Entwicklung direkt an den Flask-Server weitergeleitet werden (nur lokal).In Produktion übernimmt React Das Routing vollständig, während die Flask-App immer nur die index.html-Seite zurückgibt(SPA).
+Dadurch wird ein `dist/`-Ordner erstellt, der vom Server verwendet wird. Zudem ist React als Proxy in der package.json-Datei definiert, sodass API-Anfragen während der Entwicklung direkt an den Flask-Server weitergeleitet werden (nur lokal).In Produktion übernimmt React Das Routing vollständig, während die Flask-App immer nur die index.html-Seite zurückgibt(SPA).
 
 ### 2️⃣ Python-Server starten
 Wechsle zurück zum Hauptverzeichnis und starte den Server mit:
@@ -91,13 +94,14 @@ $ cd ..
 $ python server.py
 ```
 
-Dadurch wird der Server gestartet und das Frontend aus dem `build/`-Ordner unter dem Port 5000 ausgeliefert.
+Dadurch wird der Server gestartet und das Frontend aus dem `dist/`-Ordner unter dem Port 5173 ausgeliefert.
 
 ## 🛠 Fehlerbehebung
 
 Falls `npm run build` nicht funktioniert:
 * Stelle sicher, dass Node.js und npm installiert sind (`node -v` und `npm -v` prüfen).
 * Falls Pakete fehlen, führe `npm install` im react-Ordner aus.
+* Node Version: 18.18.0 oder neuer
 
 Falls `python server.py` nicht funktioniert:
 * Stelle sicher, dass Python installiert ist (`python --version` prüfen).
@@ -115,7 +119,7 @@ Falls Modelle fehlen:
 ## Entwicklungsumgebung vs. Produktionsumgebung
 
 ### Entwicklungsumgebung:
-* React läuft im Entwicklungsmodus (`npm start`) auf einem lokalen Server (meistens http://localhost:3000)
+* React läuft im Entwicklungsmodus (`npm run dev`) auf einem lokalen Server (meistens http://localhost:5173)
 * Flask läuft auf einem separaten Server (meistens http://localhost:5000)
 * Hot Reloading: Änderungen an der React-App führen zu einer sofortigen Aktualisierung der Anzeige ohne manuelles Laden
 * CORS: CORS-Probleme treten auf, wenn Frontend und Backend auf verschiedenen Ports laufen. CORS muss erlaubt, um diese Anfragen zu ermöglichen
@@ -125,9 +129,15 @@ Falls Modelle fehlen:
 * Flask und React laufen eventuell auf denselben Servern oder unter dem gleichen Domains/Ports
 * Keine Hot Reloading: Im Produktionsmodus sind keine automatischen Updates mehr vorhanden
 * CORS ist oft weniger problematisch, da das Frontend und Backend in einer gemeinsamen Domain/Dienst bereitgestellt werden
-* CORS muss für Socket.IO explizit erlaubt werden, weil Socket.IO auf WebSocket-Verbindungen angewiesen ist
-* WebSockets kommunizieren über eine dauerhaft geöffnete TCP-Verbindung
-* In deinem Fall, wenn sowohl das Frontend (React) als auch das Backend (Flask) unter http://localhost:5000 laufen, muss cors_allowed_origins auf http://localhost:5000 gesetzt.
+
+### Vorteile:
+* Kein Reverse-Proxy erforderlich: Flask kann dazu verwenden, sowohl das Frontend (React) als auch das Backend (Flask) auf demselben Server zu betreiben, ohne einen Reverse-Proxy wie NGINX zu verwenden.
+* Einfachheit: Diese Lösung ist einfach und eignet sich gut für kleinere Produktionsumgebungen oder wenn du keine zusätzliche Komplexität durch NGINX einführen möchtest.
+
+### Wann wird NGINX trotzdem sinnvoll?
+* Performance: NGINX bietet erweiterte Funktionen wie Caching, Lastenverteilung, und optimierte Handhabung von statischen Dateien, was für größere Anwendungen wichtig sein kann.
+* SSL/TLS und Sicherheitsfeatures: NGINX kann SSL/TLS-Verbindungen handhaben und zusätzliche Sicherheitsfunktionen bieten.
+* Trennung von Diensten: Wenn du in Zukunft das Frontend und das Backend auf verschiedenen Servern oder in verschiedenen Containern betreiben möchtest, kann NGINX helfen, den Verkehr zwischen den beiden zu vermitteln und Lasten auszugleichen.
 
 ## 🏆 Fazit
 Nach dem Build kannst du die Anwendung einfach mit `python server.py` starten, die anwendung läuft im Produktionsmodus! Zusätzlich kannst du PDFs analysieren und extrahierte Daten in JSON speichern. 🚀
