@@ -8,5 +8,6 @@ frontend/node_modules/
 /pdf_files
 /output_json
 /nani.py
-/chroma_database
+/chroma_database.py
 /chatbot-frontend
+gitinfos
