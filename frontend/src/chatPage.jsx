@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import './chatPage.css';
+import Sidebar from './sidebar.jsx'
 
 // In der Entwicklungsumgebung (`npm run dev`) kann in der `package.json` ein Proxy definiert werden, z. B.:
 // "proxy": "http://localhost:5000"
@@ -12,18 +13,16 @@ import './chatPage.css';
 //
 // Falls kein Proxy verwendet wird oder das Backend eine andere Domain hat, muss die Server-URL explizit angegeben werden, z. B.:
 // const socket = io('http://localhost:5000');  // Nur erforderlich, wenn kein Proxy genutzt wird.
-const socket = io();
+const socket = io("http://localhost:5000/");
 
 function ChatPage() {
   const [userInput, setUserInput] = useState({value : "0" , text : ""});
   const [messages, setMessages] = useState([]);
   const messagesEndRef = useRef(null);
   const [Model, setModel] = useState(localStorage.getItem("selectedModel") || "Lama3.1");
-  const modelRef = useRef(Model); // Referenz für Model
-
-  useEffect(() => {
-    modelRef.current = Model; // Immer aktualisieren, wenn sich Model ändert
-  }, [Model]);
+  const modelRef = useRef(Model);
+  const [timeout, setTimeoutState] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   // Automatisches Scrollen
   const scrollToBottom = () => {
@@ -32,7 +31,8 @@ function ChatPage() {
 
   // Socket-Events registrieren
   useEffect(() => {
-    // Wenn vom Server eine Antwort kommt
+    // Die Socket-Verbindung wird geöffnet, sobald die Komponente gerendert wird,
+    // Event-Listener: Die Callback-Funktion wird ausgeführt, wenn eine Nachricht ankommt (läuft asynchron).
     socket.on('response', (data) => {
       setMessages((prevMessages) => {
         const lastMessage = prevMessages[prevMessages.length - 1];
@@ -43,7 +43,7 @@ function ChatPage() {
             { ...lastMessage, text: lastMessage.text + data.response },
           ];
         }
-        // neue Bot-Nachricht, wenn der letzte nachricht von User ist 
+        // Falls die letzte Nachricht vom User stammt, wird eine neue Bot-Nachricht erstellt.
         return [...prevMessages, { sender: 'bot', text: data.response, complete: false }];
       });
     });
@@ -51,6 +51,7 @@ function ChatPage() {
       setMessages((prevMessages) => {
         const lastMessage = prevMessages[prevMessages.length - 1];
         if (lastMessage && lastMessage.sender === 'bot') {
+          // Markiert die letzte Bot-Nachricht als vollständig und speichert die Antwortzeit sowie das Modell.
           return [
             ...prevMessages.slice(0, -1), // enfernt letzte element des Arrays
             { ...lastMessage, complete: true, time: data.time, model : modelRef.current } // Antwort als vollständig markieren
@@ -59,39 +60,63 @@ function ChatPage() {
         return prevMessages;
       });
     });
+    socket.on('timeout', () => {
+      console.log("Timeout-Event empfangen!");
+      setTimeoutState(true)
+    });
     socket.on('error', (error) => {
       console.error('Error:', error);
     });
-
     return () => {
       // Cleanup: Events entfernen
+      // Cleanup: Event-Listener entfernen, wenn die Komponente unmountet wird (seite geschlossen)
       socket.off('response');
       socket.off('error');
+      socket.off('response_time');
+      socket.off('timeout');
     };
   }, []);
-
+  
   // Scrollen bei jeder Änderung von messages
   useEffect(() => {
     scrollToBottom();
     console.log(messages);
   }, [messages]);
 
+  useEffect(() => {
+    modelRef.current = Model; // Immer aktualisieren, wenn sich Model ändert
+  }, [Model]);
   // User Nachricht absenden
   // useCallback ist ein React-Hook, der eine memoisierte Version der Funktion zurückgibt. 
   // Das bedeutet, dass die Funktion nur dann neu erstellt wird, wenn eine ihrer Abhängigkeiten sich geändert hat. 
   // Andernfalls gibt useCallback die alte Referenz der Funktion zurück, was bedeutet, dass die Funktion stabil bleibt und nicht bei jedem Render neu erstellt wird.
   const sendMessage = useCallback(() => {
-    if (!userInput.text.trim() || userInput.value === "0") {
+    if (!userInput.text.trim() || userInput.value === "0" || timeout) {   // wenn timeout Nachricht gezeigt wird, könnte man keine weitere nachrichten geben
+      setUserInput({ value: "0", text: "" });
       return;
     }
+    const lastMessage = messages[messages.length - 1]; // Letzte Nachricht holen
+
+    if (lastMessage) {
+      if (lastMessage.sender === "bot" && !lastMessage.complete) {  
+        setUserInput({ value: "0", text: "" });
+        return; // Falls die letzte Bot-Nachricht noch nicht fertig ist
+      }
+      if (lastMessage.sender === "user") {  
+        setUserInput({ value: "0", text: "" });
+        return; // Falls die letzte Nachricht vom User ist (keine Doppel-Sends)
+      }
+    }
+
     // User-Nachricht in den State
     setMessages((prevMessages) => {
       const newMessages = [...prevMessages, { sender: 'user', text: userInput.text.trim() }];
       return newMessages;
     });
-  
+    // setMessages((prev) => [...prev, { sender: 'user', text: userInput.text.trim() }]);
+
     // An den Server via Socket.IO
-    socket.emit('message', { text: userInput.text.trim(), model: Model });
+    socket.emit('message', { text: userInput.text.trim(), model: Model, file : selectedFile });
   
     setUserInput({ value: "0", text: "" });
   }, [userInput, Model]);  // Abhängigkeiten für sendMessage
@@ -108,13 +133,24 @@ function ChatPage() {
   const handelevent = (event) => {
     const selectedModel = event.target.value;
     setModel(selectedModel);
-    localStorage.setItem("selectedModel", selectedModel); // Speichern für Neuladen
+    localStorage.setItem("selectedModel", selectedModel);
   };
+
+  const handleContinueRequest = () => {
+    setTimeoutState(false); // Timeout-Meldung ausblenden
+    socket.emit('continue_request', { text: messages[messages.length - 1].text.trim(), model: Model, file : selectedFile }); // Server auffordern, weiterzumachen
+  };
+
+  const handelAbbrechen = () => {
+    setTimeoutState(false);
+    setMessages((prevMessages) => prevMessages.slice(0, -1)); 
+  }
   return (
       <header className="App-header">
+        <Sidebar selectedFile={selectedFile} setSelectedFile={setSelectedFile} Model = {Model} /> 
         <div className ="dropdown-container model">
           <select id="options" value = {Model} onChange = {handelevent}>
-              <option value="Lama 3.1">Lama 3.1</option>
+              <option value="Lama3.1">Lama 3.1</option>
               <option value="DeepSeek">DeepSeek</option>
               <option value="GPT">GPT</option>
           </select>
@@ -150,6 +186,15 @@ function ChatPage() {
             </div>
           ))}
           <div ref={messagesEndRef}></div>
+          {timeout && (
+            <div className="timeout">
+              <p>⚠️ Request timeout: Weiter warten?</p>
+              <div className="timeout-buttons">
+                <button className="cancel" onClick={handelAbbrechen}>❌</button>
+                <button className="confirm" onClick={handleContinueRequest}>✅</button>
+              </div>
+            </div>
+          )}
         </div>
       </header>
   );

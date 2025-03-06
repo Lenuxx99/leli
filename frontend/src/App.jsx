@@ -7,7 +7,7 @@ function App() {
   return (
     <BrowserRouter>
       <div className="App">
-       
+          {/* <Sidebar /> Sidebar wird immer gerendert */}
           {/* Navigation oben rechts */}
           {/* <header>
             <div className="top-nav">

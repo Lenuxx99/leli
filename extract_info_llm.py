@@ -5,15 +5,8 @@ from langchain.embeddings import HuggingFaceEmbeddings
 import os
 import re
 import time
-persist_directory = "chroma_db"
 
-
-embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-
-vectorstore = Chroma(persist_directory=persist_directory, embedding_function=embedding_model)
-
-output_dir = 'output_json'
-
+# TODO: Einen Button erstellen, damit man über die UI eine JSON-Datei erstellen und herunterladen kann
 
 def extract_information_with_model(documents, model_name, num_source):
     """ Extrahiert Name, Betreuer und Thema mithilfe des Modells aus den Dokumenten """
@@ -118,7 +111,7 @@ def extract_json_from_text(text):
 #     """Bereinigt den Dateinamen von ungültigen Zeichen für das Dateisystem."""
 #     return re.sub(r'[\\/*?:"<>|]', '_', filename)
 
-def save_model_response_to_json(response_data, elapsed_time, num_source, model_folder):
+def save_model_response_to_json(response_data, elapsed_time, num_source, output_dir, model_folder):
     """Speichert die extrahierten Informationen in einer JSON-Datei."""
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -143,24 +136,48 @@ def save_model_response_to_json(response_data, elapsed_time, num_source, model_f
             json.dump(json_data, json_file, indent=4, ensure_ascii=False)
 
         print(f"Extrahierte Informationen gespeichert in {json_filename}")
-    
+
+        return json_data
     except json.JSONDecodeError as e:
         print(f"Fehler beim Parsen des JSON: {e}")
 
+def save_model_response_to_json_output(response_data, elapsed_time, num_source):
 
-Documents = vectorstore.get()["documents"]
+    cleaned_response = extract_json_from_text(response_data)
+    
+    try:
+        json_data = json.loads(cleaned_response)
+        for data in json_data : 
+            data["Antwortzeit"] = elapsed_time
+            data["Anzahl der untersuchten Dateien"] = num_source
+        
+        return json_data
+    except json.JSONDecodeError as e:
+        print(f"Fehler beim Parsen des JSON: {e}")
 
-# Prüft, wie viele Dateien untersucht werden
-unique_sources = set(meta["source"] for meta in vectorstore.get()["metadatas"])
-num_sources = len(unique_sources)
+if __name__ == "__main__":
+    
+    persist_directory = "chroma_db"
 
 
-# Llama
-response_data_model_1, elapsed_time_model1 = extract_information_with_model(Documents, "llama3.1:8b", num_sources)
-save_model_response_to_json(response_data_model_1,elapsed_time_model1, num_sources, model_folder="Llama")
+    embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-#DeepSeek
-response_data_model_2,elapsed_time_model2 = extract_information_with_model(Documents, "deepseek-r1:14b", num_sources)
-save_model_response_to_json(response_data_model_2, elapsed_time_model2, num_sources, model_folder="DeepSeek")
+    vectorstore = Chroma(persist_directory=persist_directory, embedding_function=embedding_model)
 
-print(f"Extrahierte Informationen für beide Modelle gespeichert.")
+    output_dir = 'output_json'
+    Documents = vectorstore.get()["documents"]
+
+    # Prüft, wie viele Dateien untersucht werden
+    unique_sources = set(meta["source"] for meta in vectorstore.get()["metadatas"])
+    num_sources = len(unique_sources)
+
+
+    # Llama
+    response_data_model_1, elapsed_time_model1 = extract_information_with_model(Documents, "llama3.1:8b", num_sources)
+    save_model_response_to_json(response_data_model_1,elapsed_time_model1, num_sources, output_dir, model_folder="Llama")
+
+    #DeepSeek
+    response_data_model_2,elapsed_time_model2 = extract_information_with_model(Documents, "deepseek-r1:14b", num_sources)
+    save_model_response_to_json(response_data_model_2, elapsed_time_model2, num_sources, output_dir, model_folder="DeepSeek", )
+
+    print(f"Extrahierte Informationen für beide Modelle gespeichert.")

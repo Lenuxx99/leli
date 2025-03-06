@@ -1,5 +1,4 @@
-.response-list {
-    overflow-y: auto;
+  .response-list {
     scrollbar-width: thin; /* Dünner Scrollbalken (nur für Firefox) */
     scrollbar-color: #ccc #f9f9f9; /* Farbe Scrollbalken / Hintergrund */
   }
@@ -80,6 +79,7 @@
     gap: 10px;
     max-height: 70%;
     overflow-y: auto;
+    align-items: center; 
   }
   
   .response-container {
@@ -171,4 +171,53 @@
     outline: none;
     box-shadow: none; /* Falls Browser einen Schatten hinzufügt */
   }
+  
+
+
+  .timeout {
+    position: relative; /* Fixiert die Position */
+    background-color: #900; /* Rotes Hintergrund für Fehler */
+    color: white; /* Weiße Schrift */
+    padding: 5px 15px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+    max-width: 80%;
+    display: flex;
+    gap : 2vw;
+    place-items:center;
+  }
+  .timeout-buttons{
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+  }
+  .timeout-buttons button {
+    padding: 0;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 5px !important;
+    transition: background 0.3s;
+  }
+
+  .timeout .cancel {
+    background-color: #900;
+    color: white;
+  }
+  
+  .timeout .cancel:hover {
+    background-color: #db8f8f;
+  }
+  
+  .timeout .confirm {
+    background-color: #4caf50;
+    color: white;
+  }
+  
+  .timeout .confirm:hover {
+    background-color: #388e3c;
+  }
+  
   
