@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./Sidebar.css";
 
 function Sidebar({ selectedFile, setSelectedFile, Model }) {
@@ -8,12 +8,35 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
     return storedPdfs ? JSON.parse(storedPdfs) : [];
   });
 
+  useEffect(() => {
+    const handleClickOutsideSidebar = (event) => {
+      if (!event.target.closest("#sidebar") && isCollapsed) {
+        setTimeout(() => setIsCollapsed(false), 100); // Verzögert das Schließen um 100ms
+      }
+    };
+  
+    document.addEventListener("click", handleClickOutsideSidebar);
+  
+    return () => {
+      document.removeEventListener("click", handleClickOutsideSidebar);
+    };
+  }, [isCollapsed]);
+  
   const handleFileSelect = async (event) => {
     // holt die ausgewählte PDFs
     const files = Array.from(event.target.files);
     const pdfFiles = files.filter(file => file.type === "application/pdf");
     if (pdfFiles.length === 0) {
       alert("Bitte nur PDF-Dateien hochladen.");
+      return;
+    }
+
+    const storedFiles = JSON.parse(localStorage.getItem("pdfs")) || [];
+
+    const newFiles = pdfFiles.filter(file => !storedFiles.some(storedFile => storedFile.name === file.name));
+
+    if (newFiles.length === 0) {
+      alert("Diese Datei(en) wurden bereits hochgeladen.");
       return;
     }
     // FormData-Typ
@@ -24,7 +47,7 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
 
     // Erstellt ein FormData-Objekt, das verwendet wird, um Formulardaten (einschließlich Dateien) zu speichern und an den Server zu senden (Dateien wie Bilder und PDFs können nicht in json form umgewandelt).
     const formData = new FormData();
-    pdfFiles.forEach(file => formData.append("AllPdfs", file));
+    newFiles.forEach(file => formData.append("AllPdfs", file));
 
     try {
       const response = await fetch("http://localhost:5000/api/embedding", {
@@ -38,7 +61,7 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
 
       const result = await response.json();
       console.log("Upload erfolgreich:", result);
-      
+
       setPdfFiles((prevFiles) => {
         const allFiles = [...prevFiles, ...result.files];
         localStorage.setItem("pdfs", JSON.stringify(allFiles));
@@ -79,8 +102,8 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
   };
 
   const createJson = async () => {
-    const button = document.getElementById("createjson");
-    const originalText = button.innerHTML; // Originaltext speichern
+    const button = document.getElementById("createjson"); //DOM direkt Manipulieren, keine useState ist nötig
+    const originalText = button.innerHTML;
 
     button.disabled = true;
     button.innerHTML = `Wird geladen...<span class="loader"></span>`;
@@ -95,8 +118,8 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
 
       const results = await response.json();
 
-       // Prüfen, ob results ein Array ist und model hinzufügen
-       if (Array.isArray(results)) {
+      // Prüfen, ob results ein Array ist und model hinzufügen
+      if (Array.isArray(results)) {
         results.forEach((result) => result.model = Model);
       } else if (typeof results === "object" && results !== null) {
         results.model = Model;
@@ -111,20 +134,20 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
       // Download-Link erstellen
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "data.json"; 
+      link.download = "data.json";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (error) {
       console.error("Fehler beim Abrufen der JSON-Daten:", error);
+      alert("Fehler beim Abrufen der JSON-Daten.\nMöglicher Grund: Server ist nicht gestartet.");
     } finally {
       button.disabled = false;
       button.innerHTML = originalText;
     }
   };
-
   return (
-    <div className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>
+    <div className={`sidebar ${isCollapsed ? "collapsed" : ""}`} id = "sidebar">
       <button className="toggle-btn" onClick={() => setIsCollapsed(!isCollapsed)}>
         {isCollapsed ? "➤" : "◄"}
       </button>
@@ -140,7 +163,7 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
             border: "none",
             borderRadius: "5px",
             cursor: "pointer",
-            fontSize: "0.7rem",
+            fontSize: "0.8rem",
           }}
         >
           + PDF hinzufügen
@@ -154,7 +177,7 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
               name="selectedPDF"
               checked={selectedFile === file.name}
               onChange={() => setSelectedFile(file.name)}
-              style = {{cursor: "pointer", marginBottom : "2px"}}
+              style={{ cursor: "pointer", marginBottom: "2px" }}
             />
             <img src="./pdf-icon.png" alt="PDF" className="pdf-icon" />
             <p
@@ -164,7 +187,7 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
             >
               {file.name}
             </p>
-            <button className="delete-btn" onClick={() => deleteFile(index)}>
+            <button className="delete-btn" onClick={(event) => {event.stopPropagation(); deleteFile(index)}}>
               ❌
             </button>
           </div>
@@ -187,13 +210,16 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
           border: "none",
           borderRadius: "5px",
           cursor: "pointer",
-          fontSize: "0.7rem",
+          fontSize: "0.8rem",
           display: "flex",
           justifyContent: "center",
           textAlign: "center",
           gap: "8px",
-        }} onClick={createJson}
-          id="createjson">
+        }} onClick={(event) => {
+          event.stopPropagation(); // Verhindert das Auslösen des globalen Klick-Handlers
+          createJson();
+        }}
+        id="createjson">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 16 16">
             <path d="M.5 9.9V13a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V9.9a.5.5 0 0 0-1 0V13a1 1 0 0 1-1 1H2.5a1 1 0 0 1-1-1V9.9a.5.5 0 0 0-1 0ZM7.5 1v7.293L5.354 6.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 1 0-.708-.708L8.5 8.293V1a.5.5 0 0 0-1 0Z" />
           </svg>

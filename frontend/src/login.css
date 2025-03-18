@@ -11,19 +11,12 @@
 
 .container button {
     padding: 10px 20px;
-    /* Innenabstand für den Button */
     background-color: green;
-    /* Hintergrundfarbe */
     color: white;
-    /* Textfarbe */
     border: none;
-    /* Entfernt Standard-Rahmen */
     border-radius: 5px;
-    /* Abgerundete Ecken */
     cursor: pointer;
-    /* Zeigt den Cursor als Hand beim Hover an */
     font-size: 13px;
-    /* Gut lesbare Schriftgröße */
 }
 
 form input {

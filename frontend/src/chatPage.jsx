@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import './chatPage.css';
-import Sidebar from './sidebar.jsx'
+import Sidebar from './sidebar.jsx';
+import TestModels from './test_models.jsx';
 
 // In der Entwicklungsumgebung (`npm run dev`) kann in der `package.json` ein Proxy definiert werden, z. B.:
 // "proxy": "http://localhost:5000"
@@ -16,11 +17,12 @@ import Sidebar from './sidebar.jsx'
 const socket = io("http://localhost:5000/");
 
 function ChatPage() {
-  const [userInput, setUserInput] = useState({value : "0" , text : ""});
+  const [userInput, setUserInput] = useState({ value: "0", text: "" });
+  const [Input, setInput] = useState("");
+  const [showOptions, setShowOptions] = useState(false)
   const [messages, setMessages] = useState([]);
   const messagesEndRef = useRef(null);
   const [Model, setModel] = useState(localStorage.getItem("selectedModel") || "Lama3.1");
-  const modelRef = useRef(Model);
   const [timeout, setTimeoutState] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -54,7 +56,7 @@ function ChatPage() {
           // Markiert die letzte Bot-Nachricht als vollständig und speichert die Antwortzeit sowie das Modell.
           return [
             ...prevMessages.slice(0, -1), // enfernt letzte element des Arrays
-            { ...lastMessage, complete: true, time: data.time, model : modelRef.current } // Antwort als vollständig markieren
+            { ...lastMessage, complete: true, time: data.time, model: data.model } // Antwort als vollständig markieren
           ];
         }
         return prevMessages;
@@ -64,8 +66,22 @@ function ChatPage() {
       console.log("Timeout-Event empfangen!");
       setTimeoutState(true)
     });
+    // in Produktion wird nicht benötigt
+    socket.on("connect", () => {
+      console.log("Verbunden mit dem Server", socket.id);
+    });
+  
+    socket.on("connect_error", (error) => {
+      console.error("Verbindung fehlgeschlagen:", error);
+      alert("Verbindung zum Server fehlgeschlagen. Bitte überprüfe die Verbindung.");
+    });
+  
+    socket.on("disconnect", (reason) => {
+      console.warn("⚠️ Verbindung getrennt:", reason);
+    });
     socket.on('error', (error) => {
-      console.error('Error:', error);
+      console.error('Error:', error.error);
+      alert(error.error);
     });
     return () => {
       // Cleanup: Events entfernen
@@ -74,19 +90,19 @@ function ChatPage() {
       socket.off('error');
       socket.off('response_time');
       socket.off('timeout');
+      socket.off("connect");
+      socket.off("connect_error");
+      socket.off("disconnect");
     };
   }, []);
-  
+
   // Scrollen bei jeder Änderung von messages
   useEffect(() => {
     scrollToBottom();
     console.log(messages);
   }, [messages]);
 
-  useEffect(() => {
-    modelRef.current = Model; // Immer aktualisieren, wenn sich Model ändert
-  }, [Model]);
-  // User Nachricht absenden
+  // User Nachricht absenden (Dropdown Nachrichten)
   // useCallback ist ein React-Hook, der eine memoisierte Version der Funktion zurückgibt. 
   // Das bedeutet, dass die Funktion nur dann neu erstellt wird, wenn eine ihrer Abhängigkeiten sich geändert hat. 
   // Andernfalls gibt useCallback die alte Referenz der Funktion zurück, was bedeutet, dass die Funktion stabil bleibt und nicht bei jedem Render neu erstellt wird.
@@ -98,11 +114,11 @@ function ChatPage() {
     const lastMessage = messages[messages.length - 1]; // Letzte Nachricht holen
 
     if (lastMessage) {
-      if (lastMessage.sender === "bot" && !lastMessage.complete) {  
+      if (lastMessage.sender === "bot" && !lastMessage.complete) {
         setUserInput({ value: "0", text: "" });
         return; // Falls die letzte Bot-Nachricht noch nicht fertig ist
       }
-      if (lastMessage.sender === "user") {  
+      if (lastMessage.sender === "user") {
         setUserInput({ value: "0", text: "" });
         return; // Falls die letzte Nachricht vom User ist (keine Doppel-Sends)
       }
@@ -116,12 +132,12 @@ function ChatPage() {
     // setMessages((prev) => [...prev, { sender: 'user', text: userInput.text.trim() }]);
 
     // An den Server via Socket.IO
-    socket.emit('message', { text: userInput.text.trim(), model: Model, file : selectedFile });
-  
-    setUserInput({ value: "0", text: "" });
-  }, [userInput, Model]);  // Abhängigkeiten für sendMessage
+    socket.emit('message', { text: userInput.text.trim(), model: Model, file: selectedFile });
 
-  // sende socket Nachricht an der Server wenn der User input sich ändert
+    setUserInput({ value: "0", text: "" });
+  }, [userInput]);  // Abhängigkeiten für sendMessage
+
+  // sende socket Nachricht an der Server direkt wenn der userInput sich ändert
   // Bei jedem Render wird sendMessage neu erstellt.
   // Da die Referenz von sendMessage bei jedem Render anders ist, geht React davon aus, dass useEffect erneut ausgeführt werden muss, auch wenn sich userInput nicht geändert hat.
   useEffect(() => {
@@ -130,73 +146,147 @@ function ChatPage() {
     }
   }, [userInput, sendMessage]);
 
-  const handelevent = (event) => {
+  // TextInput Nachrichten
+  const sendTextInputMessage = () => {
+    if (!Input.trim() || timeout) {   // wenn timeout Nachricht gezeigt wird, könnte man keine weitere nachrichten geben
+      setInput("");
+      return;
+    }
+    const lastMessage = messages[messages.length - 1]; // Letzte Nachricht holen
+
+    if (lastMessage) {
+      if (lastMessage.sender === "bot" && !lastMessage.complete) {
+        setInput("");
+        return; // Falls die letzte Bot-Nachricht noch nicht fertig ist
+      }
+      if (lastMessage.sender === "user") {
+        setInput("");
+        return; // Falls die letzte Nachricht vom User ist (keine Doppel-Sends)
+      }
+    }
+    setMessages((prevMessages) => {
+      const newMessages = [...prevMessages, { sender: 'user', text: Input.trim() }];
+      return newMessages;
+    });
+    // setMessages((prev) => [...prev, { sender: 'user', text: userInput.text.trim() }]);
+
+    // An den Server via Socket.IO
+    socket.emit('message', { text: Input.trim(), model: Model, file: selectedFile });
+    setInput("");
+  }
+
+  // options-container (Dropdwon Questions) wird ausgeblendet wenn ausßerhalb von userinput geklickt wird
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(".userInput")) {
+        setShowOptions(false);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
+  const handelChangeModel = (event) => {
     const selectedModel = event.target.value;
     setModel(selectedModel);
     localStorage.setItem("selectedModel", selectedModel);
   };
 
   const handleContinueRequest = () => {
-    setTimeoutState(false); // Timeout-Meldung ausblenden
-    socket.emit('continue_request', { text: messages[messages.length - 1].text.trim(), model: Model, file : selectedFile }); // Server auffordern, weiterzumachen
+    setTimeoutState(false);
+    socket.emit('continue_request', { text: messages[messages.length - 1].text.trim(), model: Model, file: selectedFile }); // Server auffordern, weiterzumachen
   };
 
   const handelAbbrechen = () => {
     setTimeoutState(false);
-    setMessages((prevMessages) => prevMessages.slice(0, -1)); 
+    setMessages((prevMessages) => prevMessages.slice(0, -1));
   }
   return (
-      <header className="App-header">
-        <Sidebar selectedFile={selectedFile} setSelectedFile={setSelectedFile} Model = {Model} /> 
-        <div className ="dropdown-container model">
-          <select id="options" value = {Model} onChange = {handelevent}>
-              <option value="Lama3.1">Lama 3.1</option>
-              <option value="DeepSeek">DeepSeek</option>
-              <option value="GPT">GPT</option>
-          </select>
-        </div>  
-        <h1>Chat with Our Bot</h1> 
-        <div className="formular">
-          <div className ="dropdown-container question">
-            <select id="options" value = {userInput.value} onChange = {(e) => { 
-              setUserInput({ value: e.target.value, text: e.target.options[e.target.selectedIndex].text });
-            }}>
-              <option value="0">.........</option>
-              <option value="1">Welche Thema hat diese Bachelorarbeit?</option>
-              <option value="2">Wer ist der Betreuer dieser Bachelorarbeit?</option>
-              <option value="3">Von wem wird diese Bachelorarbeit durchgeführt?</option>
-            </select>
-          </div>  
-          <button onClick={sendMessage}>Send</button>
-        </div>
-        <div className="response-list">
-          {messages.map((msg, index) => (
-            <div key={index} className={`response-container ${msg.sender === 'user' ? 'user-message' : 'bot-message'}`}>
-              <p
-                className="response"
-                dangerouslySetInnerHTML={{
-                  __html: msg.text
-                    .replace(/\n/g, '<br>')         // Zeilenumbrüche beibehalten
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'), // Markdown -> HTML
-                }}
-              ></p>
-              {msg.sender === 'bot' && msg.complete && (
-                <div className = "infos"><p >⏳ Antwortzeit: {msg.time} Sekunden  </p><p> Model : {msg.model}</p></div>
-              )}
-            </div>
-          ))}
-          <div ref={messagesEndRef}></div>
-          {timeout && (
-            <div className="timeout">
-              <p>⚠️ Request timeout: Weiter warten?</p>
-              <div className="timeout-buttons">
-                <button className="cancel" onClick={handelAbbrechen}>❌</button>
-                <button className="confirm" onClick={handleContinueRequest}>✅</button>
+    <header className="App-header">
+      <Sidebar selectedFile={selectedFile} setSelectedFile={setSelectedFile} Model={Model} />
+      <div className="dropdown-container model">
+        <select id="options" value={Model} onChange={handelChangeModel}>
+          <option value="Lama3.1">Lama 3.1</option>
+          <option value="DeepSeek">DeepSeek</option>
+          <option value="Mistral">Mistral</option>
+        </select>
+        <TestModels selectedFile= {selectedFile} />
+      </div>
+      <h1>Chat with Our Bot</h1>
+      <div className="formular">
+        <div className="userInput">
+          <input
+            type="text"
+            placeholder="Schreibe etwas..."
+            value={Input}
+            onFocus={() => setShowOptions(true)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              setShowOptions(e.target.value === "");
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault(); // Verhindert einen Zeilenumbruch im Input-Feld
+                sendTextInputMessage(); 
+              }
+            }}
+          />
+          {showOptions && userInput.text === "" && (
+            <div className="options-container">
+              <div
+                className="option"
+                onClick={() => setUserInput({ value: "1", text: "Welches Thema hat diese Bachelorarbeit?" })}
+              >
+                Welches Thema hat diese Bachelorarbeit?
+              </div>
+              <div
+                className="option"
+                onClick={() => setUserInput({ value: "2", text: "Wer ist der Betreuer dieser Bachelorarbeit?" })}
+              >
+                Wer ist der Betreuer dieser Bachelorarbeit?
+              </div>
+              <div
+                className="option"
+                onClick={() => setUserInput({ value: "3", text: "Von wem wird diese Bachelorarbeit durchgeführt?" })}
+              >
+                Von wem wird diese Bachelorarbeit durchgeführt?
               </div>
             </div>
           )}
         </div>
-      </header>
+        <button onClick={sendTextInputMessage}>Send</button>
+      </div>
+      <div className="response-list">
+        {messages.map((msg, index) => (
+          <div key={index} className={`response-container ${msg.sender === 'user' ? 'user-message' : 'bot-message'}`}>
+            <p
+              className="response"
+              dangerouslySetInnerHTML={{
+                __html: msg.text
+                  .replace(/\n/g, '<br>')                             // Zeilenumbrüche beibehalten
+                  .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'),  // Markdown -> HTML
+              }}
+            ></p>
+            {msg.sender === 'bot' && msg.complete && (
+              <div className="infos"><p >⏳ Antwortzeit: {msg.time} Sekunden  </p><p> Model : {msg.model}</p></div>
+            )}
+          </div>
+        ))}
+        <div ref={messagesEndRef}></div>
+        {timeout && (
+          <div className="timeout">
+            <p>⚠️ Request timeout: Weiter warten?</p>
+            <div className="timeout-buttons">
+              <button className="cancel" onClick={handelAbbrechen}>❌</button>
+              <button className="confirm" onClick={handleContinueRequest}>✅</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </header>
   );
 }
 

@@ -63,9 +63,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   margin: 0;
-  font-size: 11px;
+  font-size: 0.9rem;
 }
-
 
 .sidebar-footer button {
   outline: none ;
@@ -86,7 +85,6 @@ button{
   color: red;
   padding: 0;
 }
-
 
 .loader {
         transform: rotateZ(45deg);

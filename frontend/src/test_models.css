@@ -1,0 +1,15 @@
+.testModels{
+    color: white;
+    border-radius: 5px;
+    background-color: #34495e;
+    font-size: 14px;
+    width: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.testModels:hover {
+    background-color: goldenrod;
+}

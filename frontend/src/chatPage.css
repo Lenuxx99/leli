@@ -29,50 +29,9 @@
     color: white;
   }
   
-  
-  .formular {
-    display: flex; 
-    justify-content:center;
-    align-items: center; /* Zentriert Eingabe und Button vertikal */
-    gap: 10px; 
-    width: 50%;
-  }
-  
-  .formular input {
-    flex: 1; /* Lässt das Eingabefeld den verfügbaren Platz ausfüllen */
-    padding: 10px; 
-    border: 1px solid #ccc; 
-    border-radius: 5px; 
-    font-size: 13px; 
-  }
-  
-  .formular input:focus {
-    outline: none; 
-    border-color: #0b1c2e; 
-  }
-  
-  .formular button {
-    padding: 6.5px 20px; 
-    background-color: green; 
-    color: white; 
-    border: none; 
-    border-radius: 5px; 
-    cursor: pointer; 
-    font-size: 13px; 
-  }
-  
-  .formular button:hover {
-    background-color: #092036; 
-  }
-  
-  .formular button:active {
-    background-color: #061529; 
-    transform: scale(0.98);
-  }
-  
   .response-list {
     padding: 0 5px;
-    width: 50%;
+    width: 40%;
     margin-top: 20px;
     display: flex;
     flex-direction: column;
@@ -95,7 +54,7 @@
     background-color: #f0f0f0;
     color: #333;
     padding: 0 2px;
-    border-radius: 5px;
+    border-radius: 0px 5px 5px 5px;
     border: 1px solid #0b1c2e;
     width: fit-content; 
     max-width: 60%; 
@@ -104,12 +63,11 @@
   }
   
   .user-message {
-    /* background-color: #0b1c2e; */
     background-color: #f0f0f0;
     color: #333;
     /* color: white; */
     padding: 0 2px;
-    border-radius: 5px;
+    border-radius: 5px 0px 5px 5px;
     width: fit-content; /* Passt die Breite an den Inhalt an */
     max-width: 60%; 
     margin: 5px 0; 
@@ -120,41 +78,30 @@
     margin: 0;
     word-wrap: break-word; 
     padding: 10px;
-    font-size: 12px;
+    font-size: 0.9rem;
     text-align: start;
   }
   .infos {
     display : flex;
     gap: 20px;
+    padding: 0 10px;
   }
   .infos p {
     font-size: 10px;
     text-align: start;
     word-wrap: break-word; 
     color: green;
+    align-self: center;
   }
   
-  .pre {
-    background-color: #2d2d2d;
-    color: #f8f8f2;
-    padding: 10px;
-    border-radius: 5px;
-    font-size: 14px;
-    overflow-x: auto;
-    white-space: pre-wrap;
-  }
-  
+
   .dropdown-container.model {
+    display: flex;
+    gap : 10px;
     position: absolute;  
     top: 10px; 
     left: 10px; 
     z-index: 1000; 
-  }
-  
-  .dropdown-container.question {
-    display: flex;
-    z-index: 1000;
-    flex: 1;
   }
   
   .dropdown-container select {
@@ -169,15 +116,13 @@
   
   .dropdown-container select:focus {
     outline: none;
-    box-shadow: none; /* Falls Browser einen Schatten hinzufügt */
+    box-shadow: none;
   }
   
-
-
   .timeout {
-    position: relative; /* Fixiert die Position */
-    background-color: #900; /* Rotes Hintergrund für Fehler */
-    color: white; /* Weiße Schrift */
+    position: relative; 
+    background-color: #900; 
+    color: white; 
     padding: 5px 15px;
     border-radius: 10px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
@@ -221,3 +166,76 @@
   }
   
   
+  .formular {
+    display: flex; 
+    justify-content:center;
+    align-items: center; 
+    gap: 10px; 
+    width: 40%;
+  }
+  
+  .formular button {
+    padding: 8px 20px; 
+    background-color: #34495e; 
+    color: white; 
+    border: none; 
+    border-radius: 5px; 
+    cursor: pointer; 
+    font-size: 0.9rem;
+  }
+  
+  .formular button:hover {
+    background-color:goldenrod;
+  }
+  
+  .formular button:active {
+    background-color: #061529; 
+    transform: scale(0.98);
+  }
+
+  .userInput {
+    position: relative;
+    display: flex;
+    flex: 1;
+  }
+  
+  .userInput input {
+    width: 100%;
+    padding: 6px 0px;
+    border:none;
+    border-bottom: 2px solid white;
+    outline: none;
+    background: none;
+    color: white;
+    font-size: 0.9rem;
+  }
+
+  .formular input:focus {
+    outline: none; 
+    border-bottom: 2px solid  goldenrod; 
+    
+  }
+  .formular input:focus::placeholder {
+    color: white; 
+  }
+  .options-container {
+    position: absolute;
+    top: 100%; /* Direkt unter das Input-Feld */
+    left: 0;
+    width: 100%;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 10; 
+    font-size: 1rem;
+    background-color: #34495e;
+  }
+  
+  .option {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .option:hover {
+    border-bottom: 1px solid goldenrod;
+    color: goldenrod;
+  }
