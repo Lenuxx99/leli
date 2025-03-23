@@ -202,7 +202,7 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
           onChange={handleFileSelect}
         />
       </div>
-      <div className="sidebar-footer" style={{ textAlign: "center", marginTop: "20px", display: isCollapsed ? "flex" : "none", width: "100%", justifyContent: "center" }}>
+      <div className="sidebar-footer" style={{ textAlign: "center", marginTop: "20px", display: isCollapsed ? "flex" : "none", width: "100%", justifyContent: "center", position: "relative" }}>
         <button style={{
           padding: "10px 15px",
           backgroundColor: "#008CBA",
@@ -225,6 +225,7 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
           </svg>
           <span>Extract all Infos</span>
         </button>
+        <div className = "hide_info">Request Timeout erfolgt 40s nach dem Start.</div>
       </div>
     </div>
   );

@@ -11,11 +11,13 @@ import json
 import os 
 import time
 from extract_info_llm import save_model_response_to_json_output, extract_information_with_model
-from test_models import query_model
+from test_models import query_model, evaluate_response
 import logging
 import sys
 import psutil 
 import platform
+import asyncio
+from collections import OrderedDict
 
 # Flask-App erstellen
 app = Flask(__name__, static_folder='./frontend/dist', static_url_path=None)
@@ -201,7 +203,7 @@ def getJson():
         num_vectors = vectorstore._collection.count()
         logging.info(f"Anzahl der Vektoren in ChromaDB: {num_vectors}")
         
-        query = "Bachelorarbeit Student Thema Betreuer Matrikelnummer"
+        query = "Anmeldung zur Bachelorarbeit Student Thema der Bachelorarbeit Betreuer Matrikelnummer"
 
         # Führe die Ähnlichkeitssuche mit Score durch
         retrieved_texts = vectorstore.similarity_search_with_score(query, k = num_vectors)
@@ -256,7 +258,12 @@ def testmodels():
     ]
 
     # Testfragen (Kriterien für die CSV-Spalten)
-    questions = ["Thema?", "Betreuer Name?", "Supervisor name?", "E-Mail vom Betreuer?"]
+    questions = [
+        ("Thema?", "Die Antwort muss das Thema der Bachelorarbeit erwähnen."),
+        ("Betreuer Name?", "Die Antwort muss den Namen des Betreuers enthalten."),
+        ("Supervisor name?", "The answer must include the supervisor's name."),
+        ("E-Mail vom Betreuer?", "Die Antwort muss die E-Mail des Betreuers nennen."),
+    ]
     data = request.get_json()
 
     file_path = os.path.join(UPLOAD_FOLDER, data["file"])
@@ -265,20 +272,22 @@ def testmodels():
     
     for model_name in models:
         row = [model_name]  # Erste Spalte: Modellname
-        for question in questions:
+        for question, Erwartete_Inhalte in questions:
             logging.info(f"[{model_name}] '{question}'")
             filter_criteria = {"source": file_path} 
             similar_docs = vectorstore.similarity_search(question, k=3, filter=filter_criteria)            
             context = "\n".join([doc.page_content for doc in similar_docs])
 
-            times, response = query_model(model_name, question, context)
-            logging.info(f"Modell-Antwortszeit (bis komplette Antwort): {times}")
-            response_infos.append({
-                "Model": model_name,
-                "Frage": question, 
-                "Response": response, 
-                "Antwortzeit": times
-            })
+            times, response , hardware = asyncio.run(query_model(model_name, question, context))
+            bewertung  = evaluate_response (response, Erwartete_Inhalte, context, question)
+            response_infos.append(OrderedDict([
+                    ("Model", model_name),
+                    ("Frage", question),
+                    ("Response", response),
+                    ("Antwortzeit", times),
+                    ("Antwort Bewertung", bewertung),
+                    ("Hardware Auslastung", hardware)
+                ]))
             row.append(times)  # Zeiten in die Zeile einfügen
         results.append(row)  # results = [[model_name1, times_question1, times_question2, times_question3], [model_name2, times_question1, times_question2, times_question3]...]
     logging.info(results)
@@ -313,19 +322,23 @@ def call (user_input, model, source):
             logging.info(context) 
 
         full_prompt = f"""
-            Bitte beantworte die folgende Frage präzise und detailliert, basierend auf den bereitgestellten Informationen.
-            Verwende ausschließlich die folgenden Hintergrundinformationen und integriere sie direkt in deine Antwort, ohne darauf hinzuweisen, dass sie aus einer externen Quelle stammen.
-            
-            Falls die bereitgestellten Informationen keine relevanten Inhalte zur Beantwortung der Frage enthalten, antworte, dass die ausgewählte PDF keine relevanten Informationen enthält.
+            Bitte beantworte die folgende Frage präzise und detailliert anhand der bereitgestellten Informationen.  
+            Nutze ausschließlich die unten angegebenen Hintergrundinformationen und integriere sie direkt in deine Antwort, ohne explizit auf eine externe Quelle hinzuweisen.  
 
-            Falls kein Kontext vorhanden ist, informiere den Benutzer, dass er ein PDF auswählen muss, um weitere Unterstützung zu erhalten.
-            Die Antwort sollte logisch aufgebaut, präzise und umfassend sein, ohne vom Thema abzuschweifen.
+            Falls die bereitgestellten Informationen keine relevante Antwort auf die Frage enthalten, informiere den Benutzer darüber, dass die ausgewählte PDF keine relevanten Informationen enthält.  
 
-            Informationen:\n{context}\n
+            Falls kein Kontext vorhanden ist, weise den Benutzer darauf hin, dass er zunächst eine PDF-Datei auswählen muss, um eine fundierte Antwort zu erhalten.  
 
-            Frage: {user_input}
+            Falls der Benutzer keine spezifische Frage stellt, antworte normal, ohne die Hintergrundinformationen zu berücksichtigen.  
 
-        """
+            Formuliere deine Antwort logisch, präzise und verständlich, ohne vom Thema abzuschweifen.  
+
+            **Hintergrundinformationen:**  
+            {context}  
+
+            **Benutzerfrage:**  
+            {user_input}  
+            """
 
         model_config = {
             "Lama3.1": {
@@ -352,14 +365,19 @@ def call (user_input, model, source):
 
         url = "http://localhost:11434/api/chat"
 
+        cpu_before = psutil.cpu_percent(interval=None)
+        ram_before = psutil.virtual_memory().percent
+        logging.info(f"Vor der Anfrage - CPU: {cpu_before}%, RAM: {ram_before}%")
+
         response = requests.post(url, json=payload, stream=True, timeout=20)
 
         if response.status_code == 200:
             first_response = True
             start_time = None
 
-            logging.info(f"Aktuelle CPU-Auslastung:{psutil.cpu_percent(interval=1)}%")
             logging.info(f"{model} Antwort:")
+
+            # **2. Während der Verarbeitung - CPU & RAM messen**
             for line in response.iter_lines(decode_unicode=True):
                 if line:
                     json_data = json.loads(line)
@@ -368,15 +386,25 @@ def call (user_input, model, source):
                         if first_response:
                             start_time = time.time()  # Timer starten, wenn erste Antwort kommt
                             first_response = False  # Timeout ab jetzt nicht mehr relevant
-                        
+
+                        # CPU & RAM während der Verarbeitung
+                        cpu_during = psutil.cpu_percent(interval=None)
+                        ram_during = psutil.virtual_memory().percent
+                        logging.info(f"Waehrend der Antwort - CPU: {cpu_during}%, RAM: {ram_during}%")
+
                         token = json_data["message"]["content"]
                         logging.info(json_data)
                         emit('response', {'response': token})
-            
-            if start_time:  
+
+            # **3. CPU- & RAM-Auslastung NACH der Antwort**
+            if start_time:
                 elapsed_time = round(time.time() - start_time, 2)
-                emit('response_time', {'time': elapsed_time, "model" : model})
+                emit('response_time', {'time': elapsed_time, "model": model})
                 logging.info(f"Antwortzeit: {elapsed_time}s")
+
+            cpu_after = psutil.cpu_percent(interval=None)
+            ram_after = psutil.virtual_memory().percent
+            logging.info(f"Nach der Anfrage - CPU: {cpu_after}%, RAM: {ram_after}%")
         else:
             emit('error', {'error': 'Fehler beim Verbinden mit dem Modell. Aktualisiere die Seite und wähle ein anderes Modell aus.'})
 
@@ -412,8 +440,12 @@ def continue_request(data):
     call(user_input, model, file_path)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=False)  # Flask standardmäßig Port 5000 oder socketio.run(app, debug=True, port = 5000) 
-
+    # Startet die Flask-Anwendung mit SocketIO
+    # `threaded=True` ermöglicht die gleichzeitige Bearbeitung mehrerer Anfragen (Multithreading) und eventloop nicht blockieren
+    # Standardmäßig ist `threaded=True` bereits aktiv, daher kann es auch weggelassen werden.
+    # Alternativ kann `port=5000` explizit angegeben werden, falls ein anderer Port gewünscht ist.
+    # Gunicorn 
+    socketio.run(app, debug=False)  # Startet Flask auf dem Standardport 5000
 
 
 

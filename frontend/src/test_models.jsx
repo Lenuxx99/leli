@@ -3,7 +3,7 @@ import "./test_models.css";
 import JSZip from "jszip";
 
 function TestModels({ selectedFile }) {
-    const handelclick = async () => {
+    const handleClick = async () => {
         const button = document.getElementById("testModels");
         const originalText = button.innerHTML;
 
@@ -43,12 +43,14 @@ function TestModels({ selectedFile }) {
         }
     }
     return (
-        <button
+        <div className = "testModels"> 
+             <button
             id="testModels"
-            className="testModels"
-            onClick={handelclick}
+            onClick={handleClick}
         >
             test Models</button>
+            <div class="hide">Es werden alle Modelle getestet und es kann eine Weile dauern. Im Log kann verfolgt werden, was im Hintergrund passiert.</div>
+        </div>
     );
 }
 
