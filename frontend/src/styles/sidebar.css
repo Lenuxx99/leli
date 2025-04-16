@@ -38,7 +38,7 @@
 .sidebar_body {
   margin-top: 10px;
   padding: 0 10px;
-  height: 80%;
+  /* height: 80%; */
   max-height: 80%;
   overflow-y: auto;
 }
@@ -192,7 +192,7 @@ button {
   background-color: rgba(255, 255, 255, 0.1);
   color: white;
   padding: 10px;
-  top: -160%;
+  top: 110%;
   font-size: 12px;
   max-width: 130px;
   border-radius: 8px;
@@ -200,7 +200,7 @@ button {
   width: 120px;
   text-align: center;
   transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-  transform: translateY(30%);
+  transform: translateY(-30%);
 }
 
 .sidebar-footer button:hover + .hide_info {

@@ -45,6 +45,7 @@ Installiere die beiden Modelle:
 ```
 $ ollama run deepseek-r1:14b
 $ ollama run llama3.1:8b
+$ ollama run mistral
 ```
 
 Starte anschließend den Server, falls er noch nicht gestartet ist:
@@ -52,27 +53,6 @@ Starte anschließend den Server, falls er noch nicht gestartet ist:
 ```
 $ ollama serve
 ```
-
-## 📂 Nutzung
-
-### 1️⃣ PDFs in ChromaDB laden
-Führe das Skript aus:
-
-```
-$ python Embeddings.py
-```
-
-Speichere deine PDFs im Ordner `pdf_files/`, um die Inhalte in Embeddings umzuwandeln und in der Chroma-Datenbank zu speichern.
-
-### 2️⃣ Informationen extrahieren
-Starte das Hauptskript zur Extraktion der Informationen:
-
-```
-$ python extract_info.py
-```
-
-### 3️⃣ Ergebnisse überprüfen
-Die extrahierten Daten werden als JSON-Dateien im `output_json/` Ordner gespeichert.
 
 ## 🏆 Start von React-App
 

@@ -18,7 +18,7 @@ import psutil
 import platform
 import asyncio
 from collections import OrderedDict
-
+from PDFProce import PDFProcessor
 # Flask-App erstellen
 app = Flask(__name__, static_folder='./frontend/dist', static_url_path=None)
 CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]}})
@@ -81,7 +81,7 @@ def serve_frontend(path):
 documents = [] 
 already_processed = set() 
 file_urls = []
-
+lesen_error  = []
 # Situation	                            Verwendet
 # Datei-Upload (PDF, Bild)	            request.files
 # JSON-Daten (z. B. Text, Arrays)	    request.json
@@ -101,8 +101,6 @@ def handle_embedding():
         # tnaa7i espace w sonderzeichen
         filename = secure_filename(file.filename)
 
-        file_urls.append({"name": file.filename, "url": f"http://localhost:5000/uploads/{filename}"})
-
         # files sind bereits in Frontend gefiltert
         if filename in already_processed:
             logging.info(f"Datei {filename} wurde bereits verarbeitet, wird übersprungen.")
@@ -110,16 +108,14 @@ def handle_embedding():
         
         already_processed.add(filename)
 
-        # Datei temporär speichern
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        file.save(filepath)
+        processor = PDFProcessor(upload_folder=UPLOAD_FOLDER)
+        filepath = processor.save_file(file, filename)
+        chunks = processor.extract_text_chunks(filepath)
+        if chunks is None:
+            lesen_error.extend(filename)
+            continue 
 
-        # PDF laden & in Chunks aufteilen
-        loader = PyPDFLoader(filepath)
-        pages = loader.load()
-
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)  # Jeder einzelne Chunk hat maximal 800 Zeichen
-        chunks = text_splitter.split_documents(pages)
+        file_urls.append({"name": file.filename, "url": f"http://localhost:5000/uploads/{filename}"})
 
         logging.info(f"Datei {filename} eingefuegt, {len(chunks)} Chunks extrahiert.")
 
@@ -136,7 +132,7 @@ def handle_embedding():
         logging.info(vectorstore.get())
         documents.clear()  
 
-    return jsonify({"files": file_urls}), 200
+    return jsonify({"files": file_urls, "error": lesen_error}), 200
 
 @app.route("/api/delete_embedding", methods=["POST"])
 def handle_delete_embedding():

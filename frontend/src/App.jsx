@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import Chat from "./chatPage";
+import Chat from "./components/chatPage";
 import Login from "./login";   
 import './App.css'
 

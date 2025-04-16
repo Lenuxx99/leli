@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
-import './chatPage.css';
+import '../styles/chatPage.css';
 import Sidebar from './sidebar.jsx';
 import TestModels from './test_models.jsx';
 
@@ -70,12 +70,12 @@ function ChatPage() {
     socket.on("connect", () => {
       console.log("Verbunden mit dem Server", socket.id);
     });
-  
+
     socket.on("connect_error", (error) => {
       console.error("Verbindung fehlgeschlagen:", error);
       alert("Verbindung zum Server fehlgeschlagen. Bitte überprüfe die Verbindung.");
     });
-  
+
     socket.on("disconnect", (reason) => {
       console.warn("⚠️ Verbindung getrennt:", reason);
     });
@@ -213,9 +213,18 @@ function ChatPage() {
           <option value="DeepSeek">DeepSeek</option>
           <option value="Mistral">Mistral</option>
         </select>
-        <TestModels selectedFile= {selectedFile} />
+        <TestModels selectedFile={selectedFile} />
       </div>
-      <h1>Chat with Our Bot</h1>
+      <h1 style={{ marginTop: "100px", color: "goldenrod" }} >LLMs Test Umgebung</h1>
+      <div className="hinweise">
+        <p><strong>Hinweise zur Nutzung:</strong></p>
+        <ul>
+          <li>Wähle ein Modell im Dropdown-Menü oben rechts.</li>
+          <li>Lade eine PDF-Datei über die <strong>Seitenleiste rechts</strong> hoch und wählen sie dies aus.</li>
+          <li>Nutze die vorgeschlagenen Fragen oder stelle eigene Fragen im Eingabefeld.</li>
+        </ul>
+      </div>
+      <h2 style = {{ fontSize: "1.5rem"}}>PDF Abfragen</h2>
       <div className="formular">
         <div className="userInput">
           <input
@@ -230,7 +239,7 @@ function ChatPage() {
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault(); // Verhindert einen Zeilenumbruch im Input-Feld
-                sendTextInputMessage(); 
+                sendTextInputMessage();
               }
             }}
           />
@@ -256,9 +265,17 @@ function ChatPage() {
               </div>
             </div>
           )}
+          {messages.length > 0 &&
+            messages[messages.length - 1].sender === "user" && !timeout  &&
+            !messages.some((msg, index) => index > messages.findLastIndex(m => m.sender === "user") && msg.sender === "bot") && (
+              <div className="thinking-indicator">🤔 Denkprozess läuft...</div>
+            )}
         </div>
         <button onClick={sendTextInputMessage}>Send</button>
       </div>
+
+
+
       <div className="response-list">
         {messages.map((msg, index) => (
           <div key={index} className={`response-container ${msg.sender === 'user' ? 'user-message' : 'bot-message'}`}>
@@ -278,7 +295,7 @@ function ChatPage() {
         <div ref={messagesEndRef}></div>
         {timeout && (
           <div className="timeout">
-            <p>⚠️ Request timeout: Weiter warten?</p>
+            <p>⚠️ Request timeout: Anfrage erneut senden?</p>
             <div className="timeout-buttons">
               <button className="cancel" onClick={handelAbbrechen}>❌</button>
               <button className="confirm" onClick={handleContinueRequest}>✅</button>

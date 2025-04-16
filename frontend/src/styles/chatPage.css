@@ -24,15 +24,30 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     font-size: calc(10px + 2vmin);
     color: white;
   }
+  .hinweise {
+    margin: 0 0 1rem 0;
+    padding: 1rem;
+    background-color: #34495e;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    margin-bottom: 50px;
+  }
   
+  .hinweise ul {
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+  
+  .hinweise li {
+    margin-bottom: 0.5rem;
+  }
   .response-list {
     padding: 0 5px;
     width: 40%;
-    margin-top: 20px;
+    margin-top: 30px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -238,4 +253,19 @@
   .option:hover {
     border-bottom: 1px solid goldenrod;
     color: goldenrod;
+  }
+
+  .thinking-indicator {
+    position: absolute;
+    top: 100%;
+    font-size: 1rem;
+    font-style: italic;
+    color: #555;
+    animation: blink 1.5s infinite;
+  }
+  
+  @keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
   }

@@ -180,33 +180,6 @@ def evaluate_response(model_answer, Erwartete_Inhalte, referenz, question):
     except Exception as e:
         print(f"Fehler: {e}") 
         return {"message": "Modelverbindung fehlgeschlagen"}
-    # response = requests.post(
-    #     "http://localhost:11434/api/chat",
-    #     json={"model": "llama3.1:8b", "messages": [{"role": "user", "content": prompt}]}
-    # )
-
-    # if response.status_code != 200:
-    #     logging.info(f"Fehler: {response.status_code}, {response.text}")
-    #     return {"message" : "Modelverbindung fehlgeschlagen"}
-
-    # logging.info("Model Auswertung Antwort:")
-    # try:
-    #     response_text = ""
-    #     json_data = response.text.strip().split("\n")  # Falls die API JSONL zurückgibt
-
-    #     for token in json_data:
-    #         token_json = json.loads(token)  
-    #         logging.info(token_json)
-    #         if "message" in token_json and "content" in token_json["message"]:
-    #             response_text += token_json["message"]["content"]
-
-    #     json_output = extract_json_from_text(response_text)  # Extrahiert nur das JSON
-    #     return json.loads(json_output)
-
-    # except json.JSONDecodeError as e:
-    #     logging.info("Fehler beim Parsen der JSON-Daten:", e)
-    #     logging.info("Rohdaten:", response.text)
-    #     return {"message" : "Fehler beim Parsen der JSON-Daten"}
     
 
 
@@ -218,11 +191,12 @@ async def main():
     result = await query_model(model, question, context)
     print(result)
 
-    question = "welche betreuer hat diese Bachelorarbeit"
+    question = "Was ist maschinelles Lernen?"
     model_answer = "Die Bachelorarbeit Thema ist LLM und wird von Herr Munster betreut"
-    reference = "der Betreuer ist... (muss der name des betreuer enthalten sein)"
+    reference = "Maschinelles Lernen ist ein Teilbereich der künstlichen Intelligenz."
+    Erwartete_Inhalte = "muss die Thema enthalten sein"
 
-    score = evaluate_response(model_answer, reference, question)
+    score = evaluate_response(model_answer,Erwartete_Inhalte, reference, question)
     print(f"Modellbewertung: {score}")
 
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "./Sidebar.css";
+import "../styles/Sidebar.css";
 
 function Sidebar({ selectedFile, setSelectedFile, Model }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -67,6 +67,9 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
         localStorage.setItem("pdfs", JSON.stringify(allFiles));
         return allFiles;
       });
+      if (result.error.length > 0) {
+        alert(result.error.split(",").join("\n") + "\nwurden nicht richtig gelesen, daher sind sie nicht beigefügt.");
+      }
     } catch (error) {
       console.error("Fehler:", error);
       alert("Upload fehlgeschlagen!");
@@ -215,6 +218,7 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
           justifyContent: "center",
           textAlign: "center",
           gap: "8px",
+          alignItems: "center"
         }} onClick={(event) => {
           event.stopPropagation(); // Verhindert das Auslösen des globalen Klick-Handlers
           createJson();
@@ -223,7 +227,7 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 16 16">
             <path d="M.5 9.9V13a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V9.9a.5.5 0 0 0-1 0V13a1 1 0 0 1-1 1H2.5a1 1 0 0 1-1-1V9.9a.5.5 0 0 0-1 0ZM7.5 1v7.293L5.354 6.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 1 0-.708-.708L8.5 8.293V1a.5.5 0 0 0-1 0Z" />
           </svg>
-          <span>Extract all Infos</span>
+          <span>JSON aus PDFs generieren</span>
         </button>
         <div className = "hide_info">Request Timeout erfolgt 40s nach dem Start.</div>
       </div>

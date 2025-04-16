@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./test_models.css";
+import "../styles/test_models.css";
 import JSZip from "jszip";
 
 function TestModels({ selectedFile }) {
@@ -48,7 +48,7 @@ function TestModels({ selectedFile }) {
             id="testModels"
             onClick={handleClick}
         >
-            test Models</button>
+            Modelle testen</button>
             <div class="hide">Es werden alle Modelle getestet und es kann eine Weile dauern. Im Log kann verfolgt werden, was im Hintergrund passiert.</div>
         </div>
     );
