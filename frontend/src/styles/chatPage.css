@@ -1,24 +1,6 @@
-  .response-list {
-    scrollbar-width: thin; /* Dünner Scrollbalken (nur für Firefox) */
-    scrollbar-color: #ccc #f9f9f9; /* Farbe Scrollbalken / Hintergrund */
-  }
-  
-  /* Für WebKit-Browser (Chrome, Edge, Safari) */
-  .response-list::-webkit-scrollbar {
-    width: 8px;
-  }
-  
-  .response-list::-webkit-scrollbar-thumb {
-    background-color: #ccc;
-    border-radius: 4px;
-  }
-  
-  .response-list::-webkit-scrollbar-track {
-    background: #f9f9f9;
-  }
-  
+
   .App-header {
-    background-color: #282c34;
+    /* background-color: #282c34; */
     min-height: 100vh;
     width: 100vw; 
     display: flex;
@@ -27,111 +9,231 @@
     font-size: calc(10px + 2vmin);
     color: white;
   }
-  .hinweise {
-    margin: 0 0 1rem 0;
-    padding: 1rem;
-    background-color: #34495e;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    margin-bottom: 50px;
-  }
-  
-  .hinweise ul {
+  body {
+    background-color: #1a1f2b;
+    font-family: 'Segoe UI', sans-serif;
+    color: #f1f5f9;
     margin: 0;
-    padding-left: 1.2rem;
+    padding: 0;
+    box-sizing: border-box;
   }
   
-  .hinweise li {
-    margin-bottom: 0.5rem;
+  h1.main-title {
+    margin-top: 100px;
+    color: #facc15;
+    font-size: 2.8rem;
+    text-align: center;
+    letter-spacing: 0.5px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
   }
+  
+  h1.main-title::before {
+    content: "\1F4A1"; 
+    font-size: 2rem;
+    display: inline-block;
+    transform: translateY(2px);
+  }
+
+  .hinweise::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .hinweise::-webkit-scrollbar-thumb {
+    background-color: #475569;
+    border-radius: 6px;
+  }
+  
+  .hinweise::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .hinweise {
+    position: absolute;
+    left: 0;
+    background-color: #1e2a38;
+    padding: 0 1.5rem;
+    border-radius: 0 0 1rem 1rem ;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    color: #f0f4f8;
+    font-size: 0.95rem;
+    width: 100%;
+    max-width: 320px;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+  
+  .hinweise h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #e0bb50; /* goldgelber Kontrast */
+  }
+  
+  .hinweise p {
+    margin-bottom: 1rem;
+    line-height: 1.5;
+    color: #d0dce7;
+  }
+  
+  .hinweise strong {
+    color: #82d4ff;
+  }
+  
+  .hinweise svg, .hinweise .icon {
+    margin-right: 0.5rem;
+    color: #87cefa;
+  }
+  .hinweise > div:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 0.75rem;
+    transition: all 0.2s ease;
+    padding-left: 0.5rem;
+    cursor: pointer;
+  }
+
   .response-list {
-    padding: 0 5px;
-    width: 40%;
-    margin-top: 30px;
+    padding: 0 10px;
+    width: 100%;
+    max-width: 700px;
+    margin: 30px auto 0;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    max-height: 70%;
+    gap: 12px;
+    max-height: 65vh;
     overflow-y: auto;
-    align-items: center; 
+    scrollbar-width: thin;
+    scrollbar-color: #475569 transparent;
+  }
+  
+  .response-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .response-list::-webkit-scrollbar-thumb {
+    background-color: #475569;
+    border-radius: 6px;
+  }
+  
+  .response-list::-webkit-scrollbar-track {
+    background: transparent;
   }
   
   .response-container {
-    display: flex; 
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center; 
-    justify-content: flex-start; 
-    margin-bottom: 10px; 
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
   }
   
+  /* Nachricht vom Bot */
   .bot-message {
-    background-color: #f0f0f0;
-    color: #333;
-    padding: 0 2px;
-    border-radius: 0px 5px 5px 5px;
-    border: 1px solid #0b1c2e;
-    width: fit-content; 
-    max-width: 60%; 
-    margin: 5px 0; 
-    align-self: flex-start; 
+    background-color: #f1f5f9;
+    color: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 12px 12px 12px 0px;
+    padding: 10px 14px;
+    max-width: 75%;
+    align-self: flex-start;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   }
   
+  /* Nachricht vom Nutzer */
   .user-message {
-    background-color: #f0f0f0;
-    color: #333;
-    /* color: white; */
-    padding: 0 2px;
-    border-radius: 5px 0px 5px 5px;
-    width: fit-content; /* Passt die Breite an den Inhalt an */
-    max-width: 60%; 
-    margin: 5px 0; 
-    align-self: flex-end; 
+    background-color: #3b82f6;
+    color: white;
+    border-radius: 12px 12px 0px 12px;
+    padding: 10px 14px;
+    max-width: 75%;
+    align-self: flex-end;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   }
   
   .response {
     margin: 0;
-    word-wrap: break-word; 
-    padding: 10px;
-    font-size: 0.9rem;
-    text-align: start;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    word-wrap: break-word;
+    white-space: pre-wrap;
   }
+  
   .infos {
-    display : flex;
-    gap: 20px;
-    padding: 0 10px;
+    display: flex;
+    gap: 16px;
+    margin-top: 6px;
+    font-size: 11px;
+    opacity: 0.8;
   }
+  
   .infos p {
-    font-size: 10px;
-    text-align: start;
-    word-wrap: break-word; 
-    color: green;
-    align-self: center;
+    color: #10b981;
+    margin: 0;
+    white-space: nowrap;
   }
+  
   
 
   .dropdown-container.model {
     display: flex;
-    gap : 10px;
-    position: absolute;  
-    top: 10px; 
-    left: 10px; 
-    z-index: 1000; 
+    align-items: center;
+    gap: 12px;
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
   }
   
   .dropdown-container select {
-    flex: 1;
-    padding: 5px;
+    padding: 6px 10px;
     font-size: 14px;
-    border-radius: 4px;
-    background-color: #282c34;
-    color: white;
+    border-radius: 6px;
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
     cursor: pointer;
+    transition: background-color 0.2s ease;
+    width: 150px;
+  }
+  
+  .dropdown-container select:hover {
+    background-color: #334155;
   }
   
   .dropdown-container select:focus {
     outline: none;
-    box-shadow: none;
+    box-shadow: 0 0 0 2px #facc15;
+  }
+
+
+  /* Timeout-Box */
+  .timeout {
+    margin-top: 20px;
+    padding: 12px;
+    color: #92400e;
+    border: 1px solid #facc15;
+    border-radius: 8px;
+    text-align: center;
+  }
+  
+  .timeout-buttons button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  
+  .timeout-buttons .cancel {
+    background-color: #ef4444;
+    color: white;
+  }
+  
+  .timeout-buttons .confirm {
+    background-color: #22c55e;
+    color: white;
   }
   
   .timeout {
@@ -144,10 +246,10 @@
     text-align: center;
     font-size: 13px;
     font-weight: bold;
-    max-width: 80%;
     display: flex;
     gap : 2vw;
     place-items:center;
+    justify-content: center;
   }
   .timeout-buttons{
     display: flex;
@@ -182,32 +284,36 @@
   
   
   .formular {
-    display: flex; 
-    justify-content:center;
-    align-items: center; 
-    gap: 10px; 
-    width: 40%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
   }
   
   .formular button {
-    padding: 8px 20px; 
-    background-color: #34495e; 
-    color: white; 
-    border: none; 
-    border-radius: 5px; 
-    cursor: pointer; 
+    padding: 8px 20px;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
     font-size: 0.9rem;
+    transition: background-color 0.2s ease, transform 0.1s ease;
   }
   
   .formular button:hover {
-    background-color:goldenrod;
+    background-color: #facc15;
+    color: black;
   }
   
   .formular button:active {
-    background-color: #061529; 
-    transform: scale(0.98);
+    background-color: #1e293b;
+    transform: scale(0.97);
   }
-
+  
   .userInput {
     position: relative;
     display: flex;
@@ -217,55 +323,81 @@
   .userInput input {
     width: 100%;
     padding: 6px 0px;
-    border:none;
-    border-bottom: 2px solid white;
+    border: none;
+    border-bottom: 2px solid #cbd5e1;
     outline: none;
-    background: none;
+    background: transparent;
     color: white;
     font-size: 0.9rem;
+    transition: border-color 0.2s ease;
   }
-
-  .formular input:focus {
-    outline: none; 
-    border-bottom: 2px solid  goldenrod; 
-    
+  
+  .userInput input::placeholder {
+    color: #94a3b8;
+    font-style: italic;
   }
-  .formular input:focus::placeholder {
-    color: white; 
+  
+  .userInput input:focus {
+    border-bottom: 2px solid #facc15;
   }
+  
   .options-container {
     position: absolute;
-    top: 100%; /* Direkt unter das Input-Feld */
+    top: 100%;
     left: 0;
     width: 100%;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
-    z-index: 10; 
-    font-size: 1rem;
-    background-color: #34495e;
+    margin-top: 6px;
+    background-color: #1e293b;
+    border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    z-index: 20;
+    animation: fadeIn 0.2s ease-out;
+    overflow: hidden;
   }
   
   .option {
-    padding: 10px;
+    padding: 10px 14px;
     cursor: pointer;
-    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+    color: #f1f5f9;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background-color 0.2s, color 0.2s;
   }
   
   .option:hover {
-    border-bottom: 1px solid goldenrod;
-    color: goldenrod;
+    background-color: #334155;
+    color: #facc15;
   }
-
+  
   .thinking-indicator {
     position: absolute;
     top: 100%;
-    font-size: 1rem;
-    font-style: italic;
-    color: #555;
-    animation: blink 1.5s infinite;
+    font-size: 14px;
+    color: #facc15;
+    padding: 2px 0px;
+    animation: pulseOpacity 1.8s ease-in-out infinite;
   }
   
-  @keyframes blink {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
+  @keyframes pulseOpacity {
+    0% {
+      opacity: 0.2;
+      transform: translateY(-1px);
+    }
+    20% {
+      opacity: 0.4;
+      transform: translateY(-0.5px);
+    }
+    50% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    80% {
+      opacity: 0.4;
+      transform: translateY(-0.5px);
+    }
+    100% {
+      opacity: 0.2;
+      transform: translateY(-1px);
+    }
   }
+  

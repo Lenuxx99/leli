@@ -25,6 +25,7 @@ function ChatPage() {
   const [Model, setModel] = useState(localStorage.getItem("selectedModel") || "Lama3.1");
   const [timeout, setTimeoutState] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [serverconnected, setServerConnected] = useState(false);
 
   // Automatisches Scrollen
   const scrollToBottom = () => {
@@ -69,11 +70,12 @@ function ChatPage() {
     // in Produktion wird nicht benötigt
     socket.on("connect", () => {
       console.log("Verbunden mit dem Server", socket.id);
+      setServerConnected(true);
     });
 
     socket.on("connect_error", (error) => {
       console.error("Verbindung fehlgeschlagen:", error);
-      alert("Verbindung zum Server fehlgeschlagen. Bitte überprüfe die Verbindung.");
+      setServerConnected(false);
     });
 
     socket.on("disconnect", (reason) => {
@@ -206,7 +208,37 @@ function ChatPage() {
   }
   return (
     <header className="App-header">
-      <Sidebar selectedFile={selectedFile} setSelectedFile={setSelectedFile} Model={Model} />
+      <Sidebar selectedFile={selectedFile} setSelectedFile={setSelectedFile} Model={Model} serverconnected={serverconnected} />
+      <div className="hinweise p-4 bg-gray-100 rounded-xl shadow-md text-gray-800 space-y-4">
+        <div>
+          <h2 className="text-xl font-bold mb-2">📄 PDF-Abfragen</h2>
+          <p>
+            Mit dieser Funktion kannst du Inhalte aus hochgeladenen PDF-Dokumenten abfragen. Wähle dazu zunächst eine PDF-Datei
+            in der Sidebar aus. Die Inhalte der Datei werden automatisch gechunkt, in Vektoren umgewandelt und in einer
+            Vektor-Datenbank gespeichert. Bei einer Nutzeranfrage wird die relevante Passage mithilfe semantischer
+            Suche abgerufen und dem Sprachmodell als Kontext übergeben – so erhältst du präzise, dokumentenbasierte Antworten.
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-bold mb-2">🧾 JSON aus PDFs generieren</h2>
+          <p>
+            Diese Funktion extrahiert strukturierte Informationen aus PDFs und speichert sie im JSON-Format. Besonders nützlich
+            bei standardisierten Formularen, wissenschaftlichen Arbeiten oder offiziellen Dokumenten.
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-bold mb-2">🧠 Modelle testen</h2>
+          <p>
+            In diesem Bereich kannst du verschiedene Sprachmodelle vergleichen, z.&nbsp;B. <strong>LLaMA 3.1 (8B)</strong>,
+            <strong> DeepSeek R1 (8B)</strong> oder <strong>Mistral 7B Instruct</strong>. Wichtig: Wähle zuerst eine PDF-Datei
+            in der Sidebar aus, damit das Modell die passenden Kontexte laden kann. Beim Klick auf den Test-Button wird
+            eine Reihe vordefinierter Fragen an jedes Modell gestellt. Am Ende werden die Ergebnisse übersichtlich aufbereitet
+            und als Datei zum Herunterladen bereitgestellt.
+          </p>
+        </div>
+      </div>
       <div className="dropdown-container model">
         <select id="options" value={Model} onChange={handelChangeModel}>
           <option value="Lama3.1">Lama 3.1</option>
@@ -215,16 +247,9 @@ function ChatPage() {
         </select>
         <TestModels selectedFile={selectedFile} />
       </div>
-      <h1 style={{ marginTop: "100px", color: "goldenrod" }} >LLMs Test Umgebung</h1>
-      <div className="hinweise">
-        <p><strong>Hinweise zur Nutzung:</strong></p>
-        <ul>
-          <li>Wähle ein Modell im Dropdown-Menü oben rechts.</li>
-          <li>Lade eine PDF-Datei über die <strong>Seitenleiste rechts</strong> hoch und wählen sie dies aus.</li>
-          <li>Nutze die vorgeschlagenen Fragen oder stelle eigene Fragen im Eingabefeld.</li>
-        </ul>
-      </div>
-      <h2 style = {{ fontSize: "1.5rem"}}>PDF Abfragen</h2>
+      <h1 className="main-title">LLMs Test Umgebung</h1>
+
+      <h2 style={{ fontSize: "1.5rem" }}>📄 PDF-Abfragen</h2>
       <div className="formular">
         <div className="userInput">
           <input
@@ -253,9 +278,9 @@ function ChatPage() {
               </div>
               <div
                 className="option"
-                onClick={() => setUserInput({ value: "2", text: "Wer ist der Betreuer dieser Bachelorarbeit?" })}
+                onClick={() => setUserInput({ value: "2", text: "Wer ist der HS-Betreuer dieser Bachelorarbeit?" })}
               >
-                Wer ist der Betreuer dieser Bachelorarbeit?
+                Wer ist der HS-Betreuer dieser Bachelorarbeit?
               </div>
               <div
                 className="option"
@@ -265,19 +290,19 @@ function ChatPage() {
               </div>
             </div>
           )}
-          {messages.length > 0 &&
-            messages[messages.length - 1].sender === "user" && !timeout  &&
+          {messages.length > 0 && serverconnected &&
+            messages[messages.length - 1].sender === "user" && !timeout &&
             !messages.some((msg, index) => index > messages.findLastIndex(m => m.sender === "user") && msg.sender === "bot") && (
-              <div className="thinking-indicator">🤔 Denkprozess läuft...</div>
+              <div key={Date.now()} className="thinking-indicator">
+                🤔 Denkprozess läuft...
+              </div>
             )}
         </div>
         <button onClick={sendTextInputMessage}>Send</button>
       </div>
 
-
-
       <div className="response-list">
-        {messages.map((msg, index) => (
+        {serverconnected && messages.map((msg, index) => (
           <div key={index} className={`response-container ${msg.sender === 'user' ? 'user-message' : 'bot-message'}`}>
             <p
               className="response"
@@ -292,7 +317,6 @@ function ChatPage() {
             )}
           </div>
         ))}
-        <div ref={messagesEndRef}></div>
         {timeout && (
           <div className="timeout">
             <p>⚠️ Request timeout: Anfrage erneut senden?</p>
@@ -302,6 +326,13 @@ function ChatPage() {
             </div>
           </div>
         )}
+        {!serverconnected && (
+          <div className="timeout">
+            <p>Verbindungsfehler: Keine Verbindung zum Server</p>
+          </div>
+        )}
+        <div ref={messagesEndRef}></div>
+
       </div>
     </header>
   );

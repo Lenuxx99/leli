@@ -71,14 +71,14 @@ const downloadCSVandJSON = async (data) => {
     const csvContent = data.results.map(row => row.join(",")).join("\n");
     const csvString = headers.join(",") + "\n" + csvContent;
 
-    // ✅ CSV-Datei hinzufügen
+    // CSV-Datei hinzufügen
     zip.file("test_results.csv", csvString);
 
-    // ✅ JSON-Datei hinzufügen
+    // JSON-Datei hinzufügen
     const jsonString = JSON.stringify(data.allInfos, null, 2);
     zip.file("test_results.json", jsonString);
 
-    // 🔽 ZIP generieren und als Datei speichern
+    // ZIP generieren und als Datei speichern
     const zipBlob = await zip.generateAsync({ type: "blob" });
     const zipUrl = URL.createObjectURL(zipBlob);
     const zipLink = document.createElement("a");

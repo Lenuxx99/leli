@@ -2,13 +2,16 @@
   height: 100vh;
   right: 0;
   top: 0;
-  color: white;
+  color: #f0f4f8;
   padding: 20px;
   transition: transform 0.3s ease, background-color 0.3s ease;
   position: fixed;
-  background-color: #34495e;
+  background-color: #1e2a38;
   transform: translateX(14vw);
-  width: 15vw;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  border-radius: 12px 0 0 12px;
+  max-width: 300px;
+  width: 100%;
 }
 
 .sidebar.collapsed {
@@ -38,24 +41,42 @@
 .sidebar_body {
   margin-top: 10px;
   padding: 0 10px;
-  /* height: 80%; */
   max-height: 80%;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #1e293b;
+}
+
+/* Für Webkit-Browser */
+.sidebar_body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar_body::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-radius: 4px;
 }
 
 .pdfs {
   display: flex;
   align-items: center;
-  gap: 5px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  margin: 5px 0;
-  cursor: pointer;
+  justify-content: space-between;
+  background-color: #273547;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.pdfs:hover {
+  background-color: #324058;
 }
 
 .pdf-icon {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
+  margin: 0 10px;
+  border-radius: 50%;
 }
 
 .pdfs p {
@@ -65,8 +86,40 @@
   text-overflow: ellipsis;
   margin: 0;
   font-size: 0.9rem;
+  color: #e2e8f0;
+  cursor: pointer;
 }
 
+.pdfs p:hover {
+  text-decoration: underline;
+  color: #38bdf8;
+}
+
+.pdfs input[type="radio"] {
+  margin-right: 6px;
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+
+.delete-btn {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  color: #f87171;
+  cursor: pointer;
+  margin-left: 10px;
+  padding: 2px;
+  transition: color 0.2s ease;
+}
+
+.delete-btn:hover {
+  color: #dc2626;
+}
+.delete-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
 .sidebar-footer button {
   outline: none;
   border: none;

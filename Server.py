@@ -3,8 +3,6 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from werkzeug.utils import secure_filename
 import requests
 import json
@@ -19,6 +17,8 @@ import platform
 import asyncio
 from collections import OrderedDict
 from PDFProce import PDFProcessor
+from collections import defaultdict
+
 # Flask-App erstellen
 app = Flask(__name__, static_folder='./frontend/dist', static_url_path=None)
 CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]}})
@@ -43,7 +43,8 @@ persist_directory = "chroma_db"
 embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 # Chroma-Datenbank laden
-vectorstore = Chroma(persist_directory=persist_directory, embedding_function=embedding_model, collection_name="vectorstore") # , collection_metadata={"hnsw:space": "cosine"}
+vectorstore = Chroma(persist_directory=persist_directory, embedding_function=embedding_model, collection_name="vectorstore") 
+# collection_metadata={"hnsw:space": "cosine"}
 
 # Ordner für Uploads erstellen
 UPLOAD_FOLDER = os.path.join("uploads") 
@@ -140,12 +141,6 @@ def handle_delete_embedding():
         data = request.get_json()  # { filename: fileToDelete.name }
         filename_ = data.get("filename")
 
-        # file_urls.append({...})	❌	    append() verändert nur den Inhalt der globalen Liste.
-        # file_urls = []	        ✅	    Hier wird die ganze Variable überschrieben, nicht nur der Inhalt.
-        # file_urls += [...]	    ✅	    += erzeugt intern eine neue Liste, daher braucht es global.
-        # global file_urls
-        # file_urls = [file for file in file_urls if file["name"] != filename_]
-
         filename = secure_filename(filename_)
 
         if not filename:
@@ -199,43 +194,87 @@ def getJson():
         num_vectors = vectorstore._collection.count()
         logging.info(f"Anzahl der Vektoren in ChromaDB: {num_vectors}")
         
-        query = "Anmeldung zur Bachelorarbeit Student Thema der Bachelorarbeit Betreuer Matrikelnummer"
+        queries = [
+            ("Anmeldung zur Bachelorarbeit", 2.5),
+            ("Student Vorname Familienname", 2.2),
+            ("Thema der Bachelorarbeit", 2.3),
+            ("HS-Betreuer", 2.0),
+            ("Matrikel", 2.0),
+        ]
+        aggregated_scores = defaultdict(float)
+        doc_map = {}
 
-        # Führe die Ähnlichkeitssuche mit Score durch
-        retrieved_texts = vectorstore.similarity_search_with_score(query, k = num_vectors)
+        for subquery, weight in queries:
+            # Die euklidische Distanz l2 misst den geradlinigen Abstand zwischen zwei Punkten im Raum. 
+            # Sie berücksichtigt sowohl die Richtung als auch die Länge der Vektoren. Je kleiner der Wert, desto ähnlicher sind die Punkte.
+            results = vectorstore.similarity_search_with_score(subquery, k=num_vectors)
+            for doc, score in results:
+                key = str(hash(doc.page_content))
+                relevance = weight * (1 / (score + 1e-5))
 
-        logging.info("Aehnlichkeit Score jeder Vektor:")
-        for doc, score in retrieved_texts:
-            cleaned_text = doc.page_content[:100].replace("\n", " ")
-            logging.info(f"Score: {score} / Vektor_text: {cleaned_text}")
-                    
+                # Bonus falls alle Schlüsselwörter im Text vorhanden
+                words = subquery.split()
+                all_words_in_doc = all(word.lower() in doc.page_content.lower() for word in words)
+
+                if all_words_in_doc:
+                    for word in words:
+                        logging.info(f"Wort gefunden für Bonus: {word}")
+                    relevance *= 5
+
+                aggregated_scores[key] += relevance
+                # Speichere nicht nur doc, sondern eine Struktur mit Inhalt und Source
+                doc_map[key] = {
+                    "text": doc.page_content,
+                    "source": doc.metadata.get("source", "Unbekannt")  # Fallback falls keine Quelle existiert
+                }
+
+        ranked_docs = sorted(aggregated_scores.items(), key=lambda x: x[1], reverse=True)
+
+        threshold = 0.1
+        filtered_docs = [(key, total_score) for key, total_score in ranked_docs if (1 / total_score) <= threshold]
+
+        logging.info("Ähnlichkeit Score jeder Vektor:")
+        for key, total_score in filtered_docs:
+            cleaned_text = doc_map[key]["text"].replace("\n", " ")
+            source = doc_map[key]["source"]
+            logging.info(f"Score: {1 / total_score:.4f} / Source: {source} / Vektor_text: {cleaned_text[:100]}...")
+
+        # Extrahiere die Texte + Source für weitere Verarbeitung:
+        retrieved_texts = [{
+            "text": doc_map[key]["text"],
+            "source": doc_map[key]["source"]
+        } for key, _ in filtered_docs]
+        logging.info(retrieved_texts)       
+
+        grouped_by_source = defaultdict(list)     
+        for item in retrieved_texts:
+            source = item["source"]
+            text = item["text"].replace("\n", " ")
+            grouped_by_source[source].append(text)
+
+        # Jetzt jeden Text pro Datei zusammenfügen:
+        combined_texts_per_source = {
+            source: " ".join(texts) for source, texts in grouped_by_source.items()
+        }       
+        logging.info(combined_texts_per_source) 
         print(vectorstore._collection._client.get_collection(name="vectorstore"))
-    
-        # Die euklidische Distanz l2 misst den geradlinigen Abstand zwischen zwei Punkten im Raum. 
-        # Sie berücksichtigt sowohl die Richtung als auch die Länge der Vektoren. Je kleiner der Wert, desto ähnlicher sind die Punkte.
-        threshold = 1.2
-        
-        retrieved_texts = [doc.page_content for doc, score in retrieved_texts if score <= threshold]
         
         logging.info(f"Genutztes Model: {model}")
         logging.info(f"Anzahl der zu bearbeitenden Dateien: {num_sources}")
-        # print("Relevante Informationen gefunden:")
-        # for text in retrieved_texts:
-        #    print(text)
         logging.info("JSON file wird erstellt....")
         
         response = {"message": "Modell nicht unterstützt"}  
         
         if model == "Lama3.1":
             # Llama
-            response_data_model_1, elapsed_time_model1 = extract_information_with_model(retrieved_texts, "llama3.1:8b", num_sources)
+            response_data_model_1, elapsed_time_model1 = extract_information_with_model(combined_texts_per_source, "llama3.1:8b", num_sources)
             response = save_model_response_to_json_output(response_data_model_1, elapsed_time_model1, num_sources)
         elif model == "DeepSeek" : 
             #DeepSeek
-            response_data_model_2,elapsed_time_model2 = extract_information_with_model(retrieved_texts, "deepseek-r1:14b", num_sources)
+            response_data_model_2,elapsed_time_model2 = extract_information_with_model(combined_texts_per_source, "deepseek-r1:14b", num_sources)
             response = save_model_response_to_json_output(response_data_model_2, elapsed_time_model2, num_sources)
         elif model == "Mistral" :
-            response_data_model_2,elapsed_time_model2 = extract_information_with_model(retrieved_texts, "mistral", num_sources)
+            response_data_model_2,elapsed_time_model2 = extract_information_with_model(combined_texts_per_source, "mistral", num_sources)
             response = save_model_response_to_json_output(response_data_model_2, elapsed_time_model2, num_sources)
 
         logging.info("JSON file erfolgreich erstellt")
@@ -255,10 +294,11 @@ def testmodels():
 
     # Testfragen (Kriterien für die CSV-Spalten)
     questions = [
-        ("Thema?", "Die Antwort muss das Thema der Bachelorarbeit erwähnen."),
-        ("Betreuer Name?", "Die Antwort muss den Namen des Betreuers enthalten."),
-        ("Supervisor name?", "The answer must include the supervisor's name."),
-        ("E-Mail vom Betreuer?", "Die Antwort muss die E-Mail des Betreuers nennen."),
+        ("Thema der Bachelorarbeit?", "Die Antwort muss das Thema der Bachelorarbeit erwähnen, Falls es in Referenz vorhanden ist.."),
+        ("HS-Betreuer Name?", "Die Antwort muss den Namen des Betreuers enthalten, Falls es in Referenz vorhanden ist.."),
+        ("Uni Supervisor name?", "The answer must include the supervisor's name, Falls es in Referenz vorhanden ist.."),
+        ("E-Mail vom HS-Betreuer?", "Die Antwort muss die E-Mail des Betreuers nennen, Falls es in Referenz vorhanden ist."),
+        ("welche Produktnummer hat dieses Produkt", "Die Antwort muss die Produktnummer nennen, Falls es in Referenz vorhanden ist."),
     ]
     data = request.get_json()
 
@@ -271,9 +311,14 @@ def testmodels():
         for question, Erwartete_Inhalte in questions:
             logging.info(f"[{model_name}] '{question}'")
             filter_criteria = {"source": file_path} 
-            similar_docs = vectorstore.similarity_search(question, k=3, filter=filter_criteria)            
-            context = "\n".join([doc.page_content for doc in similar_docs])
-
+            similar_docs = vectorstore.similarity_search_with_score(question, k=5, filter=filter_criteria)            
+            for doc, score in similar_docs:
+                cleaned_text = doc.page_content.replace("\n", " ")
+                logging.info(f"Score: {score} / Vektor_text : {cleaned_text}")
+            
+            threshold = 1.5
+            # Kontext aus den Dokumenten extrahieren
+            context = "\n".join([doc.page_content for doc, score in similar_docs if score <= threshold ])
             times, response , hardware = asyncio.run(query_model(model_name, question, context))
             bewertung  = evaluate_response (response, Erwartete_Inhalte, context, question)
             response_infos.append(OrderedDict([
@@ -289,24 +334,46 @@ def testmodels():
     logging.info(results)
     return jsonify({"results": results, "questions": questions, "allInfos": response_infos}), 200
 
+
+def boost_score(doc, score, user_input, boost_terms, boost_factor):
+    doc_text = doc.page_content.lower()
+    query_text = user_input.lower()
+
+    for term in boost_terms:
+        term_lower = term.lower()
+        if term_lower in query_text:
+            if term_lower in doc_text or (
+                term_lower == "student" and ("familienname" in doc_text or "vorname" in doc_text)
+            ):
+                score *= boost_factor  # mehrfach boosten
+    return score
+
+
 def call (user_input, model, source):
     try:
+        boost_terms = ["Thema", "Bachelorarbeit", "HS-betreuer", "Betreuer", "Matrikel", "email", "student"]
+        boost_factor = 0.7
+
         # Ähnlichkeitssuche in der Chroma-Datenbank durchführen mit Filter
         filter_criteria = {"source": source} if source else None
-        similar_docs = vectorstore.similarity_search_with_score(user_input, k=3, filter=filter_criteria)
+        similar_docs = vectorstore.similarity_search_with_score(user_input, k=15, filter=filter_criteria)
 
         context = ""
         if (source):
             num_vectors = vectorstore._collection.get(where={"source": source})
+
             logging.info(f"Anzahl der gespeicherten Vektoren fuer {source}: {len(num_vectors['ids'])}")
             logging.info(f"Die {min(3, len(similar_docs))} aehnlichsten Vektoren mit Score (falls verfuegbar):")
-            for doc, score in similar_docs:
+            
+            boosted_docs = [(doc, boost_score(doc, score, user_input, boost_terms, boost_factor)) for doc, score in similar_docs]
+            boosted_docs = sorted(boosted_docs, key=lambda x: x[1])
+
+            for doc, score in boosted_docs:
                 cleaned_text = doc.page_content[:100].replace("\n", " ")
                 logging.info(f"Score: {score} / Vektor_text : {cleaned_text}")
-            
-            threshold = 1.5
+            threshold = 1
             # Kontext aus den Dokumenten extrahieren
-            context = "\n".join([doc.page_content for doc, score in similar_docs if score <= threshold ])
+            context = "\n".join([doc.page_content for doc, score in boosted_docs if score <= threshold ])
             if(context == ""):
                 context = "Keine relevante Informationen gefunden" 
                 logging.info(context)  
@@ -314,16 +381,16 @@ def call (user_input, model, source):
                 cleaned_context = context[:1000].replace('\n', ' ')
                 logging.info(f"Extrahierter Kontext nach Filterung mit einem Threshold von 1.5: {cleaned_context}...")   
         else :
-            context = "Es wurden keine relevanten Informationen gefunden. Bitte waehlen Sie ein PDF-Dokument aus, damit wir Ihnen weiterhelfen koennen."
+            context = "Bitte laden Sie ein PDF-Dokument hoch und wählen Sie es aus, damit ich Ihre Fragen auf Basis der enthaltenen Informationen beantworten kann (keine Hintergrundinformationen)."
             logging.info(context) 
 
         full_prompt = f"""
             Bitte beantworte die folgende Frage präzise und detailliert anhand der bereitgestellten Informationen.  
             Nutze ausschließlich die unten angegebenen Hintergrundinformationen und integriere sie direkt in deine Antwort, ohne explizit auf eine externe Quelle hinzuweisen.  
 
-            Falls die bereitgestellten Informationen keine relevante Antwort auf die Frage enthalten, informiere den Benutzer darüber, dass die ausgewählte PDF keine relevanten Informationen enthält.  
+            Falls die bereitgestellten Hintergrundinformationen keine relevante Antwort auf die Frage enthalten, informiere den Benutzer darüber, dass die ausgewählte PDF keine relevanten Informationen enthält.  
 
-            Falls kein Kontext vorhanden ist, weise den Benutzer darauf hin, dass er zunächst eine PDF-Datei auswählen muss, um eine fundierte Antwort zu erhalten.  
+            Falls kein Hintergrundinformationen vorhanden ist, weise den Benutzer darauf hin, dass er zunächst eine PDF-Datei auswählen muss, um eine fundierte Antwort zu erhalten.  
 
             Falls der Benutzer keine spezifische Frage stellt, antworte normal, ohne die Hintergrundinformationen zu berücksichtigen.  
 
@@ -353,11 +420,11 @@ def call (user_input, model, source):
                 "model": model_config[model]["model"],
                 "messages": [{"role": "user", "content": full_prompt}]
             }
-        # else:
-        #     payload = {
-        #         "model": "llama3.1:8b",
-        #         "messages": [{"role": "user", "content": full_prompt}]
-        #     }
+        else:
+            payload = {
+                "model": "llama3.1:8b",
+                "messages": [{"role": "user", "content": full_prompt}]
+            }
 
         url = "http://localhost:11434/api/chat"
 
@@ -373,7 +440,7 @@ def call (user_input, model, source):
 
             logging.info(f"{model} Antwort:")
 
-            # **2. Während der Verarbeitung - CPU & RAM messen**
+            # **Während der Verarbeitung - CPU & RAM messen**
             for line in response.iter_lines(decode_unicode=True):
                 if line:
                     json_data = json.loads(line)
@@ -392,7 +459,7 @@ def call (user_input, model, source):
                         logging.info(json_data)
                         emit('response', {'response': token})
 
-            # **3. CPU- & RAM-Auslastung NACH der Antwort**
+            # **CPU- & RAM-Auslastung NACH der Antwort**
             if start_time:
                 elapsed_time = round(time.time() - start_time, 2)
                 emit('response_time', {'time': elapsed_time, "model": model})

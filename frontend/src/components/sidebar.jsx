@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../styles/Sidebar.css";
 
-function Sidebar({ selectedFile, setSelectedFile, Model }) {
+function Sidebar({ selectedFile, setSelectedFile, Model, serverconnected }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [pdfFiles, setPdfFiles] = useState(() => {
     const storedPdfs = localStorage.getItem("pdfs");
@@ -190,7 +190,16 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
             >
               {file.name}
             </p>
-            <button className="delete-btn" onClick={(event) => {event.stopPropagation(); deleteFile(index)}}>
+            <button
+              className="delete-btn"
+              disabled={!serverconnected}
+              title={!serverconnected ? "Server nicht aktiv" : "Löschen"}
+              onClick={(event) => {
+                if (!serverconnected) return;
+                event.stopPropagation();
+                deleteFile(index);
+              }}
+            >
               ❌
             </button>
           </div>
@@ -206,9 +215,10 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
         />
       </div>
       <div className="sidebar-footer" style={{ textAlign: "center", marginTop: "20px", display: isCollapsed ? "flex" : "none", width: "100%", justifyContent: "center", position: "relative" }}>
-        <button style={{
+        {pdfFiles.length > 0 &&
+          <button style={{
           padding: "10px 15px",
-          backgroundColor: "#008CBA",
+          backgroundColor: "#34495e",
           color: "white",
           border: "none",
           borderRadius: "5px",
@@ -228,7 +238,7 @@ function Sidebar({ selectedFile, setSelectedFile, Model }) {
             <path d="M.5 9.9V13a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V9.9a.5.5 0 0 0-1 0V13a1 1 0 0 1-1 1H2.5a1 1 0 0 1-1-1V9.9a.5.5 0 0 0-1 0ZM7.5 1v7.293L5.354 6.146a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l3-3a.5.5 0 1 0-.708-.708L8.5 8.293V1a.5.5 0 0 0-1 0Z" />
           </svg>
           <span>JSON aus PDFs generieren</span>
-        </button>
+        </button>}
         <div className = "hide_info">Request Timeout erfolgt 40s nach dem Start.</div>
       </div>
     </div>

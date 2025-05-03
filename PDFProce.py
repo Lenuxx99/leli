@@ -22,7 +22,6 @@ class PDFProcessor:
         )
 
         chunks = text_splitter.split_documents(pages)
-
         if not chunks:
             return None
 

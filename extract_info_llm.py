@@ -7,64 +7,67 @@ import re
 import time
 import logging
 
+def clean_documents(documents):
+    cleaned_docs = []
+    for source, text in documents.items():
+        # Zeilenumbrüche ersetzen
+        text = text.replace("\n", " ")
+
+        # Mehrere Leerzeichen reduzieren
+        while "  " in text:
+            text = text.replace("  ", " ")
+
+        # Dokument klar trennen
+        cleaned_text = f"Dateiname: {source}\nText: {text}\n--- Dokument Ende ---\n"
+        cleaned_docs.append(cleaned_text)
+
+    return "\n".join(cleaned_docs)
+
 def extract_information_with_model(documents, model_name, num_source):
     """ Extrahiert Name, Betreuer und Thema mithilfe des Modells aus den Dokumenten """
     
     if not documents:
         return json.dumps({"Thema": "Unbekannt, keine Relevante Infos gefunden", "Betreuer": "Unbekannt, keine Relevante Infos gefunden", "Student": "Unbekannt, keine Relevante Infos gefunden"}), "Unbekannt"
-
+    prepared_documents = clean_documents(documents)
+    print("Prompt kontext------------------------------")
+    print(prepared_documents)
     prompt = f"""
-        Extrahiere die folgenden Informationen **ausschließlich** aus offiziellen **Bachelorarbeit-Anmeldeformularen**.  
-        
-        **Typische Informationen in einem Bachelorarbeit-Anmeldeformular:**  
-        - **Thema der Bachelorarbeit**  
-        - **Name des Studenten & Matrikelnummer**  
-        - **Name des Betreuers & E-Mail-Adresse**  
+        **WICHTIG: Halte dich exakt an diese Anweisungen.**
 
-        **Antwortformat:**  
-        - Gib die extrahierten Daten **NUR** in **einem oder mehreren JSON-Objekten** aus.  
-        - Falls nur eine Anmeldung gefunden wird, gib ein **einzelnes JSON-Objekt** zurück:  
+        Du erhältst Hintergrundinformationen, die aus genau **{num_source} Bachelorarbeit-Anmeldeformularen** bestehen.  
+        Jedes Anmeldeformular ist im Text durch klare Markierungen voneinander getrennt.  
+        Deine Aufgabe ist es, aus **jedem** dieser Formulare folgende Informationen zu extrahieren:
 
-        ```json
-        {{
-            "Thema": "Thema oder 'Unbekannt'",
-            "Betreuer": "Betreuer Name und Email Adresse oder 'Unbekannt'",
-            "Student": "Vollständiger Name und Matrikelnummer oder 'Unbekannt'"
-        }}
-        ```
+        **Zu extrahierende Informationen pro Anmeldeformular:**
+        - **Thema der Bachelorarbeit**
+        - **Name des Studenten**
+        - **Matrikelnummer des Studenten**
+        - **E-Mail-Adresse des Studenten**
+        - **Name des Hochschulbetreuers (HS-Betreuer)**
+        - **Name des externen Betreuers (Externe Betreuer)**
 
-        - Falls der Text **mehrere Anmeldeformulare** enthält, erstelle eine **Liste von JSON-Objekten**:  
+        **Antwortformat (zwingend einzuhalten!):**
+        - Gib ausschließlich **gültigen JSON-Text** zurück.
+        - Keine Erklärungen, keine zusätzlichen Sätze, keine Einleitungen, keine Tabellen, keine Kommentare.
+        - Nur den reinen JSON-String als Antwort.
+
+        **Format:**
+        - Wenn ein Anmeldeformular gefunden wird, antworte mit **einem JSON-Objekt**.
+        - Wenn mehrere Anmeldeformulare gefunden werden (was hier der Fall ist), gib eine **Liste von JSON-Objekten** zurück.
+
+        **Struktur eines JSON-Objekts:**
 
         ```json
         [
-            {{
-                "Thema": "Erstes Thema oder 'Unbekannt'",
-                "Betreuer": "Betreuer Name und Email Adresse oder 'Unbekannt'",
-                "Student": "Vollständiger Name und Matrikelnummer oder 'Unbekannt'"
-            }},
-            {{
-                "Thema": "Zweites Thema oder 'Unbekannt'",
-                "Betreuer": "Betreuer Name und Email Adresse oder 'Unbekannt'",
-                "Student": "Vollständiger Name und Matrikelnummer oder 'Unbekannt'"
-            }},
-            ...
+        {{
+            "Thema": "Thema oder 'Unbekannt' falls nicht vorhanden",
+            "Student": "Vollständiger Name oder 'Unbekannt' falls nicht vorhanden",
+            "Matrikelnummer": "Matrikelnummer oder 'Unbekannt' falls nicht vorhanden",
+            "E-Mail": "E-Mail-Adresse oder 'Unbekannt' falls nicht vorhanden",
+            "HS-Betreuer": "Name des Hochschulbetreuers oder 'Unbekannt' falls nicht vorhanden",
+            "Externer Betreuer": "Name des externen Betreuers oder 'Unbekannt' falls nicht vorhanden"
+        }}
         ]
-        ```
-
-        **Anzahl der erwarteten Anmeldeformulare:** {num_source}  
-        *(Genau {num_source} JSON-Objekte werden erwartet, aber nur für relevante Einträge.)*
-
-        **Wichtige Hinweise:**  
-        - **Es werden ausschließlich Daten aus offiziellen Bachelorarbeit-Anmeldeformularen extrahiert.**  
-        - Falls eine Information im Formular fehlt, setze sie explizit auf **'Unbekannt'**.  
-        - **Antworte ausschließlich mit JSON – kein zusätzlicher Text oder Erklärungen!**  
-        - Falls der Text **keine relevanten Informationen** enthält, antworte mit: `[]`.  
-
-        **Zusätzliche Bedingung:**  
-        - **Alle Inhalte, die nicht aus einem Bachelorarbeit-Anmeldeformular stammen oder nichts mit einer Anmeldung zu tun haben,  
-          werden vollständig ignoriert und nicht in die JSON-Antwort aufgenommen.**  
-
-        **Text:**\n{documents}
         """
 
     payload = {
@@ -94,7 +97,7 @@ def extract_information_with_model(documents, model_name, num_source):
         print(f"Fehler bei der Anfrage an das Modell: {e}")
         return json.dumps({
             "Thema": "Unbekannt, Modelverbindung fehlgeschlagen",
-            "Betreuer": "Unbekannt, Modelverbindung fehlgeschlagen",
+            "HS-Betreuer": "Unbekannt, Modelverbindung fehlgeschlagen",
             "Student": "Unbekannt, Modelverbindung fehlgeschlagen",
             "Message": "Server timeout",
         }), "Unbekannt"

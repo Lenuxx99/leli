@@ -119,20 +119,43 @@ def evaluate_response(model_answer, Erwartete_Inhalte, referenz, question):
     prompt = f"""
         Bewerte die folgende Antwort auf die gestellte Frage und gib das Ergebnis als JSON zurück.
 
-        ### **Gestellte Frage:**  
+        ### **📝 Gestellte Frage:**  
         {question}  
 
-        ### **Modellantwort:**  
+        ### **💬 Modellantwort:**  
         {model_answer}  
 
-        ### **Erwartete Inhalte:**  
+        ### **✅ Erwartete Inhalte:**  
         {Erwartete_Inhalte}  
-        Überprüfe, ob die Modellantwort die erwarteten Inhalte enthält.
+        Überprüfe, ob die Modellantwort die erwarteten Inhalte enthält – **aber nur dann**, wenn diese Informationen auch tatsächlich in den Referenzdaten vorhanden sind.  
 
-        ### **Referenz:**
-        {referenz}
+        Die Modellantwort muss dabei **immer mit den bereitgestellten Referenzdaten verglichen** werden. Nur auf dieser Grundlage darf entschieden werden, ob:
+        - eine Information vorhanden ist,
+        - korrekt wiedergegeben wurde,
+        - oder fehlt.
+
+        Falls bestimmte Inhalte **nicht in der Referenz vorhanden** sind, sollte das Modell dies klar erkennen und entsprechend formulieren  
+        (z. B. *„Die E-Mail-Adresse des Betreuers ist in der Referenz nicht enthalten.“*).  
+        Solche Antworten gelten als **vollständig und korrekt**.
+
         ---
 
+        ### **🚫 Kritischer Fehler (führt zu 0 Punkten):**  
+        Wenn das Modell eine Information **falsch zuordnet oder erfindet**, gilt die Antwort als komplett fehlerhaft.  
+        **Beispiel:** Gibt das Modell eine E-Mail-Adresse an, die eigentlich zur/m Studierenden gehört (aber als E-Mail des Betreuers dargestellt wird),  
+        → dann ist die Bewertung **in allen Kriterien 0 (Null)**.
+
+        ---
+
+        ### **📄 Referenzdokument:**  
+        {referenz}  
+        Hinweis: Die Referenzdaten stammen aus einem Formular zur Anmeldung einer Bachelorarbeit.  
+        Achte besonders darauf, dass:
+        - Namen von Studierenden und Betreuenden **nicht vermischt werden**,
+        - E-Mail-Adressen **korrekt zugeordnet sind**, und
+        - jede Information aus der Antwort **konkret mit den Referenzdaten abgeglichen** wird.
+
+        ---
         ## **📌 Bewertungskriterien (1-10):**
         - **Genauigkeit:** Enthält die Antwort die erwarteten Informationen **exakt und korrekt**?
         - **Vollständigkeit:** Beantwortet die Antwort **vollständig**, ohne Teile der erwarteten Antwort auszulassen?
@@ -154,9 +177,9 @@ def evaluate_response(model_answer, Erwartete_Inhalte, referenz, question):
         ---
 
         ### **📌 Format der JSON-Antwort:**  
-        Gib die Bewertung als JSON zurück, in genau diesem Format:
+        Gib die Bewertung im folgenden Format zurück und schlage am Ende die ideale, perfekte Antwort vor:
         ```json
-        {{
+        {{  
             "Note (/10)": note,
             "Bewertungskriterien": {{
                 "Genauigkeit": {{"Note": note, "Grund": "kurze Erklärung"}},
@@ -164,14 +187,15 @@ def evaluate_response(model_answer, Erwartete_Inhalte, referenz, question):
                 "Relevanz": {{"Note": note, "Grund": "kurze Erklärung"}},
                 "Klarheit & Natürlichkeit": {{"Note": note, "Grund": "kurze Erklärung"}}
             }}
+            "Perfekte Antwort": "Hier steht die ideale, präzise Antwort basierend auf den Referenzdaten."
         }}
         """
     try:
         completion = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="o4-mini",
             messages=[{"role": "user", "content": prompt}]
         )
-        logging.info("gpt-4o-mini Antwort (Auswertung):")
+        logging.info("o4-mini Antwort (Auswertung):")
         
         json_output = extract_json_from_text(completion.choices[0].message.content)
 
